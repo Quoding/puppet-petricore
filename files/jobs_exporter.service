@@ -1,0 +1,16 @@
+[Unit]
+Description=Jobs_exporter for Prometheus service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment="PYTHONPATH=/usr/lib64/python36.zip:/usr/lib64/python3.6:/usr/lib64/python3.6/lib-dynload:/opt/jupyterhub/lib64/python3.6/site-packages:/opt/jupyterhub/lib/python3.6/site-packages"
+ExecStart=/usr/bin/env python3 /usr/sbin/jobs_exporter
+Restart=always
+RestartSec=3
+StartLimitBurst=5
+StartLimitIntervalSec=10
+
+[Install]
+WantedBy=multi-user.target
