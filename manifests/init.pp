@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 wqclass jobs_exporter {
+=======
+class jobs_exporter {
+>>>>>>> 102696dcc7212d4ca01b2eed2ecee2a877bc8a73
   package { 'python36-psutil':
     ensure => 'installed'
   }
@@ -18,7 +22,10 @@ wqclass jobs_exporter {
     ensure => 'running',
     enable => true
   }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 102696dcc7212d4ca01b2eed2ecee2a877bc8a73
 }
 

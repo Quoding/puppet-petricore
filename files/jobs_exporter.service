@@ -1,12 +1,12 @@
 [Unit]
-Description=Jobs_exporter for Prometheus service
+Description=Slurm Jobs_exporter for Prometheus
 After=network.target
 
 [Service]
 Type=simple
 User=root
-Environment="PYTHONPATH=/usr/lib64/python36.zip:/usr/lib64/python3.6:/usr/lib64/python3.6/lib-dynload:/opt/jupyterhub/lib64/python3.6/site-packages:/opt/jupyterhub/lib/python3.6/site-packages"
-ExecStart=/usr/bin/env python3 /usr/sbin/jobs_exporter
+Environment="PYTHONPATH=/usr/lib64/python36.zip:/usr/lib64/python3.6/site-packages/:/usr/lib64/python3.6:/usr/lib64/python3.6/lib-dynload:/opt/jupyterhub/lib64/python3.6/site-packages:/opt/jupyterhub/lib/python3.6/site-packages"
+ExecStart=/usr/bin/python36 /usr/sbin/jobs_exporter
 Restart=always
 RestartSec=3
 StartLimitBurst=5
