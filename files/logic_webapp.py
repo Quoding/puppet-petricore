@@ -22,9 +22,9 @@ def index():
 
         Examples
         <ul>
-        <li><a href="https://smllr.calculquebec.cloud/logic/pdf/243">A pdf for job 243</a></li>
-        <li><a href="https://smllr.calculquebec.cloud/logic/plot/317/jobs_cpu_percent">A plot for job 243's CPU usage</a></li>
-        <li><a href="https://smllr.calculquebec.cloud/logic/mail/243">The contents of the email sent after job 243's completion</a></li>
+        <li><a href="https://smllr.calculquebec.cloud/pdf/243">A pdf for job 243</a></li>
+        <li><a href="https://smllr.calculquebec.cloud/plot/317/jobs_cpu_percent">A plot for job 243's CPU usage</a></li>
+        <li><a href="https://smllr.calculquebec.cloud/mail/242">The contents of the email sent after job 243's completion</a></li>
         </ul>
     </p>
     """
@@ -110,4 +110,5 @@ def job_pdf(jobid):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
+
