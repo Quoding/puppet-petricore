@@ -1,7 +1,9 @@
 class jobs_exporter {
-  package { 'python36-psutil':
-    ensure => 'installed'
+  package { 'psutil' :
+    ensure => 'latest',
+    provider => 'pip3'
   }
+
   file { 'jobs_exporter.service':
     ensure => 'present',
     path => '/etc/systemd/system/jobs_exporter.service',
