@@ -12,7 +12,8 @@ app = Flask(__name__)
 def index():
     return """
     <h1>Logic Web App</h1>
-    <p>This is the Webapp which serves as a the implementation of logic for the my.cc portal as well as the smail script\n
+    <p>This is the Webapp which serves as a the implementation of logic for the my.cc portal as well as the smail script
+    <br>
         Multiple paths are available from here:
         <ul>
         <li>logic/pdf/&lt;jobid&gt; will give you a pdf with plots for your a given job id</li>
@@ -22,9 +23,9 @@ def index():
 
         Examples
         <ul>
-        <li><a href="https://smllr.calculquebec.cloud/pdf/243">A pdf for job 243</a></li>
-        <li><a href="https://smllr.calculquebec.cloud/plot/317/jobs_cpu_percent">A plot for job 243's CPU usage</a></li>
-        <li><a href="https://smllr.calculquebec.cloud/mail/242">The contents of the email sent after job 243's completion</a></li>
+        <li><a href="https://goldman.calculquebec.cloud/pdf/243">A pdf for job 243</a></li>
+        <li><a href="https://goldman.calculquebec.cloud/plot/317/jobs_cpu_percent">A plot for job 243's CPU usage</a></li>
+        <li><a href="https://goldman.calculquebec.cloud/mail/242">The contents of the email sent after job 243's completion</a></li>
         </ul>
     </p>
     """
@@ -33,14 +34,13 @@ def index():
 @app.route("/mail/<jobid>")
 def job_info(jobid):
     job = Job(jobid)
-    try:
-        job.get_sacct_data()
-        job.pull_prometheus()
-        job.fill_out_string()
-    except Exception as e:
-        print(str(e))
-        print("This is normal if the job was cancelled, it pulls an empty json")
-        pass
+    # try:
+    job.fill_out_string()
+    # except Exception as e:
+    # print(str(e))
+    # print("This is normal if the job was cancelled, it pulls an empty json")
+    # pass
+    job.expose_json()
     return job.get_out_string()
 
 
@@ -52,7 +52,6 @@ def job_plot(jobid, metric):
 
     if not os.path.isfile(dirname + filename):
         try:
-            job.get_sacct_data()
             job.make_plot(metric, filename, dirname)
         except Exception as e:
             print(str(e))
@@ -78,7 +77,6 @@ def job_pie(jobid):
 
     if not os.path.isfile(dirname + filename):
         try:
-            job.get_sacct_data()
             job.make_pie(metrics, filename, dirname)
         except Exception as e:
             print(str(e))
@@ -97,7 +95,6 @@ def job_pdf(jobid):
     dirname = "/centos/pdf/"
     if not os.path.isfile(dirname + filename):
         try:
-            job.get_sacct_data()
             job.make_pdf(jobid, filename, dirname)
         except Exception as e:
             print(str(e))
@@ -109,6 +106,17 @@ def job_pdf(jobid):
         return str(e)
 
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0")
+@app.route("/api/v1/jobs/<jobid>/usage")
+def job_truth(jobid):
+    job = Job(jobid)
+    return job.expose_json()
 
+
+@app.route("/api/v1/users/<uid>")
+def user_truth(uid):
+    user = User(uid)
+    return user.get_storage_info()
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

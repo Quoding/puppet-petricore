@@ -1,11 +1,10 @@
 [Unit]
-Description=Prometheus Pushgateway service
+Description=Web application to implement logic for petriCORE
 After=network.target
 
 [Service]
 Type=simple
-User=root
-ExecStart=/centos/pushgateway-0.8.0.linux-amd64/pushgateway
+ExecStart=/opt/webapp/bin/python3 /centos/logic_webapp.py
 Restart=always
 RestartSec=3
 StartLimitBurst=5

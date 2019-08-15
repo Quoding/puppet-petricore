@@ -24,7 +24,6 @@ from prometheus_client import (
 import signal
 import sys
 import psutil
-import linecache
 
 # Global Constants
 HOST = socket.gethostname()
@@ -140,37 +139,36 @@ def get_proc_data(pids, numcpus, jobid):
     # Set jobs_uses_scratch to false here so in case no fildes links to scratch fs, it is already handled.
     us.labels(instance=HOST, slurm_job=jobid).set(0)
 
+    # Aggregators for processes
+    read_cnt = 0
+    write_cnt = 0
+    read_mbytes = 0
+    write_mbytes = 0
+    opened_files = set()
+    res_set_size = 0
+    cpu_usage = 0
+    cpu_usage_per_core = 0
+
     for pid in pids:
         p = psutil.Process(pid)
         name = p.name()
-        cpu = p.cpu_percent(
+        cpu_usage += p.cpu_percent(
             interval=0.1
         )  # Request cpu percet out of oneshot so it's queried properly
-
-        cpu_percent.labels(instance=HOST, slurm_job=jobid).set(cpu)
-
-        cpu_per_core = cpu / numcpus
-
-        cpu_percent_per_core.labels(instance=HOST, slurm_job=jobid).set(cpu_per_core)
+        cpu_usage_per_core += cpu_usage / numcpus
 
         with p.oneshot():
             # Get data from the process with psutil
-            read_cnt = p.io_counters()[0]
-            write_cnt = p.io_counters()[1]
-            read_mbytes = p.io_counters()[2] / 1048576  # In MB
-            write_mbytes = p.io_counters()[3] / 1048576  # In MB
-            opened_files = p.open_files()
-            threads = p.num_threads()
-            res_set_size = p.memory_info()[0] / 1048576  # In MB
+            read_cnt += p.io_counters()[0]
+            write_cnt += p.io_counters()[1]
+            read_mbytes += p.io_counters()[2] / 1048576  # In MB
+            write_mbytes += p.io_counters()[3] / 1048576  # In MB
+            res_set_size += p.memory_info()[0] / 1048576  # In MB
+            opened_files.update(p.open_files())
 
-            # Expose data to Prometheus
-            of.labels(instance=HOST, slurm_job=jobid).set(len(opened_files))
-            read.labels(instance=HOST, slurm_job=jobid).set(read_mbytes)
-            write.labels(instance=HOST, slurm_job=jobid).set(write_mbytes)
-            read_count.labels(instance=HOST, slurm_job=jobid).set(read_cnt)
-            write_count.labels(instance=HOST, slurm_job=jobid).set(write_cnt)
+            threads = p.num_threads()
+
             tc.labels(instance=HOST, slurm_job=jobid, proc_name=name).set(threads)
-            rss.labels(instance=HOST, slurm_job=jobid).set(res_set_size)
 
             # Looks for scratch usage in the opened files
             for file in opened_files:
@@ -183,6 +181,15 @@ def get_proc_data(pids, numcpus, jobid):
             # Remove already encountered pids as threads from the pid list
             for p in p.threads():
                 pids.remove(p[0])
+    # Expose data to Prometheus
+    of.labels(instance=HOST, slurm_job=jobid).set(len(set(opened_files)))
+    read.labels(instance=HOST, slurm_job=jobid).set(read_mbytes)
+    write.labels(instance=HOST, slurm_job=jobid).set(write_mbytes)
+    read_count.labels(instance=HOST, slurm_job=jobid).set(read_cnt)
+    write_count.labels(instance=HOST, slurm_job=jobid).set(write_cnt)
+    rss.labels(instance=HOST, slurm_job=jobid).set(res_set_size)
+    cpu_percent_per_core.labels(instance=HOST, slurm_job=jobid).set(cpu_usage_per_core)
+    cpu_percent.labels(instance=HOST, slurm_job=jobid).set(cpu_usage)
 
 
 def retrieve_file_data(job, jobid, user, dirname):

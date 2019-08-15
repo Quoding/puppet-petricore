@@ -1,12 +1,17 @@
 import subprocess
-from datetime import datetime
+import datetime
 import requests
 import json
 import os
 import matplotlib.pyplot as plt
 from pylatex import Document, Section, Figure, NoEscape, NewPage, Command
+from user import User
+from socket import gethostname
 
-HOSTNAME = "https://smllr.calculquebec.cloud"
+PROM_HOST = "http://mgmt01.int.goldman.calculquebec.cloud:9090"
+LOCALHOST = gethostname()
+LOCALHOST = LOCALHOST.split(".")[0]
+
 Y_LABELS = {
     "jobs_rss": "Resident set size (MB)",
     "jobs_cpu_percent": "CPU Usage (%)",
@@ -23,7 +28,7 @@ class Job:
         # Initialize all variables
         self.__jobid = jobid
         self.__sponsor = ""
-        self.__user = ""
+        self.__username = ""
         self.__start_time = 0
         self.__end_time = 0
         self.__alloc_cpu = 0
@@ -31,17 +36,44 @@ class Job:
         self.__nodes = 0
         self.__step = 0
         self.__runtime = 0
-        self.__results = []
         self.__alloc_mem = 0
+        self.__billing = 0
+        self.__results = []
         self.__threads = {}
         self.__warning = False
         self.__out_string = ""
         self.__uses_scratch = False
-        self.__cpu_time_core = []
+        self.__cpu_time_core = {}
         self.__cpu_time_total = 0
         self.__read_mb = 0
         self.__write_mb = 0
-        self.___fildes = 0
+        self.__read_count = 0
+        self.__write_count = 0
+        self.__opened_files = 0
+        self.__max_cpu_usage = 0
+        self.__avg_cpu_usage = 0
+        self.__max_rss = 0
+        self.__count_used_cpus = 0
+
+        # Retrieve actual data
+        self.get_sacct_data()
+        self.pull_prometheus()
+        self.get_num_used_cpus(80)
+        # self.__user = User(username)
+
+    def get_num_used_cpus(self, treshold):
+        """Gets the number of cpus effectively used by the job by measuring cpu time for each\n
+        Args:
+        - self
+        - treshold: lowest acceptable percentage of cpu time used in percentage
+        """
+        # Time shares
+        max_time_per_core = self.__cpu_time_total / self.__alloc_cpu
+        treshold_time_per_core = max_time_per_core * (treshold / 100)
+
+        for usage in self.__cpu_time_core.values():
+            if usage >= treshold_time_per_core:
+                self.__count_used_cpus += 1
 
     def get_sacct_data(self):
         """
@@ -51,7 +83,7 @@ class Job:
         FORMAT = "--format=Account,User,Start,End,AllocCPUS,AllocTRES,NodeList,Elapsed"
 
         out = subprocess.check_output(
-            [SACCT, "--units=K", "-n", "-p", FORMAT, "-j", str(self.__jobid)]
+            [SACCT, "--units=M", "-n", "-p", FORMAT, "-j", str(self.__jobid)]
         )
 
         out = out.decode("ascii")
@@ -60,14 +92,18 @@ class Job:
         out = out.split("|")
 
         self.__sponsor = out[0]
-        self.__user = out[1]
+        self.__username = out[1]
 
         self.__start_time = int(
-            subprocess.check_output(["date", "+%s", "-d", out[2]]).decode().rstrip()
+            subprocess.check_output(["/usr/bin/date", "+%s", "-d", out[2]])
+            .decode()
+            .rstrip()
         )
 
         self.__end_time = int(
-            subprocess.check_output(["date", "+%s", "-d", out[3]]).decode().rstrip()
+            subprocess.check_output(["/usr/bin/date", "+%s", "-d", out[3]])
+            .decode()
+            .rstrip()
         )
 
         self.__alloc_cpu = int(out[4])
@@ -76,9 +112,11 @@ class Job:
         self.__runtime = out[7]
         self.__step = self.__end_time - self.__start_time
 
+        self.__billing = self.__alloc_tres.split(",")[0]
+        self.__billing = int(self.__billing.split("=")[1])
+
         self.__alloc_mem = self.__alloc_tres.split(",")[2]
         self.__alloc_mem = self.__alloc_mem.split("=")[1]
-        self.__alloc_mem = int(self.__alloc_mem[:-1])
 
     def pull_prometheus(self):
         """
@@ -86,16 +124,9 @@ class Job:
         """
 
         # CONSTANT
-        API_URL = HOSTNAME + "/api/v1/query"
+        API_URL = PROM_HOST + "/api/v1/query"
 
-        metrics = (
-            "jobs_cpu_percent",
-            "jobs_rss",
-            "jobs_read_mb",
-            "jobs_write_mb",
-            "jobs_opened_files",
-            "jobs_uses_scratch",
-        )
+        metrics = ("jobs_cpu_percent", "jobs_rss", "jobs_opened_files")
 
         # Request the METRICS array since they all have the same form (sum max and avg) over the length of the job and are series OVER TIME
         for name in metrics:
@@ -105,8 +136,6 @@ class Job:
                 modifiers = ("max",)
             elif name == "jobs_opened_files":
                 modifiers = ("avg",)
-            else:
-                modifiers = ("sum",)
             for modifier in modifiers:
                 tmp_list = []
                 query_string = (
@@ -121,16 +150,20 @@ class Job:
                 )
                 params = {"query": query_string, "time": self.__end_time}
                 response = requests.get(API_URL, params=params)
-                print(API_URL)
-                print(params)
+                # print(API_URL)
+                # print(params)
                 json = response.json()["data"]["result"]
-                print(json)
+                # print(json)
                 for item in json:
                     tmp_list.append(float(item["value"][1]))
                 self.__results.append(tmp_list)
 
-        self.__opened_fildes = sum(self.__results[5])
-        # I/O Data (i.e. Do you use Scratch ?)
+        self.__avg_cpu_usage = self.__results[0]
+        self.__max_cpu_usage = self.__results[1]
+        self.__max_rss = self.__results[2]
+        self.__opened_files = int(sum(self.__results[3]))
+
+        # I/O Data
         params = {
             "query": 'jobs_uses_scratch{slurm_job="' + str(self.__jobid) + '"}',
             "time": self.__end_time,
@@ -141,6 +174,31 @@ class Job:
             if item["value"][1] == "1":
                 self.__uses_scratch = True
                 break
+
+        metrics = (
+            "jobs_read_mb",
+            "jobs_write_mb",
+            "jobs_read_count",
+            "jobs_write_count",
+        )
+
+        for metric in metrics:
+            params = {
+                "query": metric + '{slurm_job="' + str(self.__jobid) + '"}',
+                "time": self.__end_time,
+            }
+            response = requests.get(API_URL, params=params)
+            json = response.json()["data"]["result"]
+
+            for item in json:
+                if metric == "jobs_read_mb":
+                    self.__read_mb += float(item["value"][1])
+                elif metric == "jobs_read_count":
+                    self.__read_count += float(item["value"][1])
+                elif metric == "jobs_write_count":
+                    self.__write_count += float(item["value"][1])
+                else:
+                    self.__write_mb += float(item["value"][1])
 
         # Threads counts (i.e. How many threads did you spawn ?)
         params = {
@@ -162,7 +220,7 @@ class Job:
                 item["value"][1]
             )  # Multiple nodes coud be a PROBLEM, overwriting existing data ?
 
-        # Parallelization data
+        # CPU Times
         params = {
             "query": 'jobs_cpu_time_core{slurm_job="' + str(self.__jobid) + '"}',
             "time": self.__end_time,
@@ -170,10 +228,14 @@ class Job:
 
         response = requests.get(API_URL, params=params)
         json = response.json()["data"]["result"]
+        # print(json)
 
-        # Use a dict or a list here ??? Since I'm accessing by indices but could be list[0] and list[16] (15 empty spaces ?) PROBLEM ?
         for item in json:
-            self.__cpu_time_core.append(float(item["value"][1]))
+            self.__cpu_time_core[
+                item["metric"]["instance"] + "_core_" + item["metric"]["core"]
+            ] = float(item["value"][1])
+
+        self.__cpu_time_core = self.__cpu_time_core
 
         params = {
             "query": 'jobs_cpu_time_total{slurm_job="' + str(self.__jobid) + '"}',
@@ -184,44 +246,27 @@ class Job:
         for item in response.json()["data"]["result"]:
             self.__cpu_time_total += float(item["value"][1])
 
-        # I/O data
-        metrics = ("jobs_read_mb", "jobs_write_mb")
-
-        for metric in metrics:
-            params = {
-                "query": metric + '{slurm_job="' + str(self.__jobid) + '"}',
-                "time": self.__end_time,
-            }
-            response = requests.get(API_URL, params=params)
-            json = response.json()["data"]["result"]
-
-            for item in json:
-                if metric == "jobs_read_mb":
-                    self.__read_mb += float(item["value"][1])
-                else:
-                    self.__write_mb += float(item["value"][1])
-
     def verify_data(self):
         """
         Verifies if CPU Util, core usage, jobs_rss, threads, I/O are withing CC's acceptable usage boundaries
         """
         # Declarations
-        usage_avg_per_cpu = sum(self.__results[0]) / self.__alloc_cpu
+        usage_avg_per_cpu = sum(self.__avg_cpu_usage) / self.__alloc_cpu
         usage_max_per_cpu = (
-            sum(self.__results[1]) / self.__alloc_cpu
+            sum(self.__max_cpu_usage) / self.__alloc_cpu
         )  # Assuming balanced workload
         usage_ratio = usage_avg_per_cpu / usage_max_per_cpu
-        usage_rss = (sum(self.__results[2]) / self.__alloc_mem) * 100
+        usage_rss = (sum(self.__max_rss) / int(self.__alloc_mem[:-1])) * 100
         expected_time_usage_core = 0.9 * (
-            self.__cpu_time_total / len(self.__cpu_time_core)
+            self.__cpu_time_total / len(self.__cpu_time_core.keys())
         )  # To check for good parallelization (assumes we want to stay withing 10% of perfect load balancing) (Lower threshold)
         core_warning = False
         total_io_per_file = (
             self.__read_mb + self.__write_mb
-        ) / self.__opened_fildes  # 1048576 if to change bytes into MB
+        ) / self.__opened_files  # 1048576 if to change bytes into MB
 
         # To add the URL to the pdf right before the last line (which is WARNING=boolean)
-        PDF_URL = HOSTNAME + "/logic/pdf/" + str(self.__jobid)
+        PDF_URL = PROM_HOST + "/logic/pdf/" + str(self.__jobid)
 
         self.__out_string = self.__out_string + "----------I/O Data----------\n"
         # IF not using Scratch
@@ -236,14 +281,14 @@ class Job:
                 self.__out_string + "Congratulations, you've used the Scratch fs!\n"
             )
 
-        if total_io_per_file < 5 and self.__opened_fildes >= 1000:
+        if total_io_per_file < 5 and self.__opened_files >= 1000:
             self.__warning = True
             self.__out_string = (
                 self.__out_string
                 + "You seem to writing very little to a lot of files (R/W per file: "
                 + str(total_io_per_file)
                 + ", number of opened file descriptors: "
-                + str(self.__opened_fildes)
+                + str(self.__opened_files)
                 + ") -- WARNING Related resource: https://en.wikipedia.org/wiki/Asynchronous_I/O\n"
             )
         else:
@@ -303,7 +348,7 @@ class Job:
             )
 
         # Checks for CPU usage per core and compares it with the lower bound of what is acceptable
-        for usage in self.__cpu_time_core:
+        for usage in self.__cpu_time_core.values():
             if usage < expected_time_usage_core and not core_warning:
                 self.__warning = True
                 self.__out_string = (
@@ -359,7 +404,7 @@ class Job:
         self.__out_string = self.__out_string + "----------General Data----------\n"
 
         self.__out_string = self.__out_string + "Sponsor: " + self.__sponsor + "\n"
-        self.__out_string = self.__out_string + "User: " + self.__user + "\n"
+        self.__out_string = self.__out_string + "User: " + self.__username + "\n"
         self.__out_string = (
             self.__out_string + "Allocated CPUS: " + str(self.__alloc_cpu) + "\n"
         )
@@ -382,7 +427,7 @@ class Job:
         # Constants
         plt.figure()
         step_size = "15s"
-        URL = HOSTNAME + "/api/v1/query_range"
+        URL = PROM_HOST + "/api/v1/query_range"
 
         if not os.path.exists(dirname):
             os.mkdir(dirname)
@@ -467,7 +512,7 @@ class Job:
         - forpdf: boolean which tells the function if the calling function was make_pdf()
         """
         # Constants
-        URL = HOSTNAME + "/api/v1/query"
+        URL = PROM_HOST + "/api/v1/query"
 
         # Variables
         labels = []
@@ -484,14 +529,14 @@ class Job:
                 "time": self.__end_time,
             }
             response = requests.get(URL, params=params)
-            print(URL)
-            print(params)
+            # print(URL)
+            # print(params)
             json = response.json()["data"]["result"]
             for item in json:
                 # Insures we have core numbers only if we're looking for cpu_time_core
                 if "core" in item["metric"]:
                     core = item["metric"]["core"]
-                    print(core)
+                    # print(core)
                 else:
                     core = False
 
@@ -590,3 +635,72 @@ class Job:
         plt.close()
 
         doc.generate_pdf(clean_tex=False)
+
+    def expose_json(self):
+        """Expose data in a json format in order to make a SOURCE OF TRUTH (API)"""
+        data = {}
+        data["jobid"] = self.__jobid
+        data["sponsor"] = self.__sponsor
+        data["username"] = self.__username
+        data["runtime"] = self.__runtime
+        data["uses_scratch"] = str(self.__uses_scratch)
+
+        data["alloc_tres"] = {
+            "billing": self.__billing,
+            "alloc_cpu": self.__alloc_cpu,
+            "alloc_mem": self.__alloc_mem,
+            "alloc_nodes": self.__nodes,
+        }
+
+        data["threads"] = self.__threads
+        data["cpu"] = {}
+        data["cpu"]["available"] = {"amount": self.__alloc_cpu, "unit": "cores"}
+        data["cpu"]["used"] = {"amount": self.__count_used_cpus, "unit": "cores"}
+        data["cpu"]["time_core"] = []
+
+        for core in self.__cpu_time_core.keys():
+            tmp_dict = {
+                "core": core,
+                "time": self.__cpu_time_core,
+                "unit": "s",
+                "percent_of_total": (self.__cpu_time_core[core] / self.__cpu_time_total)
+                * 100,
+            }
+
+            data["cpu"]["time_core"].append(tmp_dict)
+
+        data["cpu"]["time_total"] = {"time": self.__cpu_time_total, "unit": "s"}
+
+        data["cpu"]["avg_usage_job"] = {
+            "usage": sum(self.__avg_cpu_usage),
+            "lowest_expected_usage": 80 * self.__alloc_cpu,
+            "unit": "%",
+        }
+
+        data["cpu"]["max_usage_job"] = {"usage": sum(self.__max_cpu_usage), "unit": "%"}
+
+        data["ram"] = {}
+        data["ram"]["used"] = {
+            "amount": sum(self.__max_rss),
+            "unit": "MB",
+            "usage": sum(self.__max_rss) / int(self.__alloc_mem[:-1]),
+        }
+
+        data["ram"]["available"] = {"amount": self.__alloc_mem[:-1], "unit": "MB"}
+
+        data["io"] = {}
+        data["io"]["opened_files"] = self.__opened_files
+
+        data["io"]["read"] = {
+            "amount": self.__read_mb,
+            "unit": "MB",
+            "count": self.__read_count,
+        }
+
+        data["io"]["write"] = {
+            "amount": self.__write_mb,
+            "unit": "MB",
+            "count": self.__write_count,
+        }
+
+        return data

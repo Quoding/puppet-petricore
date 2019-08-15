@@ -1,7 +1,22 @@
 class jobs_exporter {
-  package { 'psutil' :
-    ensure => 'latest',
-    provider => 'pip3'
+
+  exec { 'jobs_exporter_venv':
+    command => '/usr/bin/python36 -m venv /opt/jobs_exporter',
+    creates => '/opt/jobs_exporter/bin/python',
+    require => Package['python36']
+  }
+
+  exec { 'pip_prometheus':
+    cwd => "/opt/jobs_exporter/bin/",
+    command => "/opt/jobs_exporter/bin/pip install prometheus_client",
+    creates => "/opt/jobs_exporter/lib/python3.6/site-packages/prometheus_client/",
+    require => Exec['jobs_exporter_venv']
+  }
+
+  exec { 'pip_psutil_wheel':
+    command => "/opt/jobs_exporter/bin/pip install psutil --find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary",
+    creates => "/opt/jobs_exporter/lib/python3.6/site-packages/psutil/",
+    require => Exec['jobs_exporter_venv']
   }
 
   file { 'jobs_exporter.service':
@@ -18,6 +33,7 @@ class jobs_exporter {
 
   service { 'jobs_exporter':
     ensure => 'running',
-    enable => true
+    enable => true,
+    require => File['jobs_exporter.service', 'jobs_exporter']
   }
 }
