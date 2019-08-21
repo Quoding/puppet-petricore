@@ -48,6 +48,12 @@ class jobs_exporter::webapp {
     path => '/centos/job.py',
     source => "puppet:///modules/jobs_exporter/job.py"
   }
+
+  file { 'user.py':
+    ensure => 'present',
+    path => '/centos/user.py',
+    source => "puppet:///modules/jobs_exporter/user.py"
+  }
   file { '/centos/pdf':
     ensure => 'directory',
   }

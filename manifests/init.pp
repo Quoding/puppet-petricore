@@ -1,4 +1,10 @@
 class jobs_exporter {
+  
+  include prometheus::pushgateway
+  consul::service { 'pushgateway':
+    port => 9091,
+    tags => ['monitor'],
+  }
 
   exec { 'jobs_exporter_venv':
     command => '/usr/bin/python36 -m venv /opt/jobs_exporter',
