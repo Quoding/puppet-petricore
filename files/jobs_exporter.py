@@ -30,6 +30,9 @@ HOST = socket.gethostname()
 HOST = HOST.split(".")[0]
 REGISTRY = CollectorRegistry()
 BLACKLIST = []
+LOOKUP_DIR = "/sys/fs/cgroup/cpuacct/slurm/"
+REGEX = "task_*"
+
 
 sp = Gauge(
     "jobs_spawned_processes",
@@ -181,6 +184,7 @@ def get_proc_data(pids, numcpus, jobid):
             # Remove already encountered pids as threads from the pid list
             for p in p.threads():
                 pids.remove(p[0])
+
     # Expose data to Prometheus
     of.labels(instance=HOST, slurm_job=jobid).set(len(set(opened_files)))
     read.labels(instance=HOST, slurm_job=jobid).set(read_mbytes)
@@ -196,8 +200,9 @@ def retrieve_file_data(job, jobid, user, dirname):
     # Declarations
     tasks = []
     times = []
-    cpus = []  # Create a function attribute in order to access it in
+    cpus = []
 
+    # Semi-static paths which change depending on user and job. Control groups.
     cpuset_path = "/sys/fs/cgroup/cpuset/slurm/" + user + "/" + job + "/cpuset.cpus"
     usage_percpu_path = (
         "/sys/fs/cgroup/cpuacct/slurm/" + user + "/" + job + "/cpuacct.usage_percpu"
@@ -220,20 +225,14 @@ def retrieve_file_data(job, jobid, user, dirname):
                 else:
                     cpus.append(int(alloc))
 
-    print("In RETRIEVE_FILE_DATA() FOR " + job)
-    print(cpus)
-
     # Cross-reference the allocated CPUs with their individual usages in nanoseconds
     if os.path.isfile(usage_percpu_path):
         with open(usage_percpu_path) as cpuacct_file:
             data = cpuacct_file.readline().rstrip().split(" ")
             for cpu in cpus:
-                print(cpu)
-                print(cpus)
                 usage = (
                     int(data[cpu]) / 10 ** 9
                 )  # Divide the usage by 10 ** 9 because it's in nanoseconds (to send them to Prometheus is seconds).
-                print(usage)
                 cuc.labels(instance=HOST, slurm_job=jobid, core=cpu).set(usage)
 
     # Gets total cpu time spent for this job. Will be used to compare loads on each cpu to the total time spent (load balancing)
@@ -241,7 +240,7 @@ def retrieve_file_data(job, jobid, user, dirname):
         with open(usage_total_path) as cpuacct_file:
             usage = (
                 int(cpuacct_file.readline().rstrip()) / 10 ** 9
-            )  # Divide usage by 10**9 because it's in nanoseconds (to send them to Prometheus is seconds).
+            )  # Divide usage by 10**9 because it's in nanoseconds (to send them to Prometheus in seconds).
             cut.labels(instance=HOST, slurm_job=jobid).set(usage)
 
     # Try to open the file
@@ -276,23 +275,21 @@ def retrieve_file_data(job, jobid, user, dirname):
 
 
 def retrieve_and_expose(timer):
-    LOOKUP_DIR = "/sys/fs/cgroup/cpuacct/slurm/"
     while True:
+        # List for found jobs
         found = []
 
         # These `for loops` count the number of spawned processes by a task.
         for path, dirs, files in os.walk(
             LOOKUP_DIR  # /sys/fs/cgroup/cpuacct/slurm because all information needed right now is there (or wherever your cgroups are mounted)
         ):
-            for f in fnmatch.filter(
-                dirs,
-                "task_*"  # task_* -- Change this part to whatever format of job
-                # you're looking for, task_* gives a task_id for Slurm specifically.
-                # Other schedulers may not work with this code as is.
+            for (
+                f
+            ) in fnmatch.filter(  # Look for the REGEX (global constant, change this for other schedulers perhaps...), default is "task_*"
+                dirs, REGEX
             ):
                 # Find full name of the path
                 fullname = os.path.abspath(os.path.join(path, f))
-
                 # Find the job ID
                 job = re.search("(job_)[0-9]+", fullname).group(
                     0
@@ -313,6 +310,7 @@ def retrieve_and_expose(timer):
                         "localhost:9091", job="jobs_exporter", registry=REGISTRY
                     )
 
+        # Wait the set amount of time before re-retrieving and exposing the next set of data.
         time.sleep(timer)
 
         # Delete from Pushgateway, else it creates flat lines for jobs that don't exist anymore.

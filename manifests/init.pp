@@ -1,5 +1,5 @@
 class jobs_exporter {
-  
+
   include prometheus::pushgateway
   consul::service { 'pushgateway':
     port => 9091,
@@ -7,9 +7,13 @@ class jobs_exporter {
   }
 
   exec { 'jobs_exporter_venv':
-    command => '/usr/bin/python36 -m venv /opt/jobs_exporter',
+    command => '/usr/bin/python3 -m venv /opt/jobs_exporter',
     creates => '/opt/jobs_exporter/bin/python',
-    require => Package['python36']
+    require => Package['python3']
+  }
+
+  exec { 'pip_upgrade':
+    command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
   }
 
   exec { 'pip_prometheus':
