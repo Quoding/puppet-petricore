@@ -7,7 +7,7 @@ it only installs `python36-psutil` package since it's the only package that was 
 will be added if the need arises.
 
 
-##Checklist
+## Checklist
 - Go to `/etc/puppetlabs/code/environments/production/`
 - Clone this repo inside `modules/`
 - Rename it to `jobs_exporter/` instead of `puppet-jobs_exporter/`
