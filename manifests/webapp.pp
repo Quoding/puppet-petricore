@@ -1,9 +1,9 @@
 class jobs_exporter::webapp {
 
   exec { 'webapp_venv':
-    command => '/usr/bin/python36 -m venv /opt/webapp',
+    command => '/usr/bin/python3 -m venv /opt/webapp',
     creates => '/opt/webapp/bin/python',
-    require => Package['python36']
+    require => Package['python3']
   }
 
   exec { 'pip_flask':
