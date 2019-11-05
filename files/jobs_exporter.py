@@ -27,7 +27,7 @@ import psutil
 
 # Global Constants
 HOST = socket.gethostname()
-HOST = HOST.split(".")[0]
+HOST = HOST.split(".")[0]  # Get the node name
 REGISTRY = CollectorRegistry()
 BLACKLIST = []
 LOOKUP_DIR = "/sys/fs/cgroup/cpuacct/slurm/"

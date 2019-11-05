@@ -4,6 +4,7 @@ class jobs_exporter {
   consul::service { 'pushgateway':
     port => 9091,
     tags => ['monitor'],
+    token => lookup('profile::consul::acl_api_token')
   }
 
   exec { 'jobs_exporter_venv':
