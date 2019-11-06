@@ -8,7 +8,8 @@ from pylatex import Document, Section, Figure, NoEscape, NewPage, Command
 from user import User
 from socket import gethostname
 
-PROM_HOST = "http://mgmt01.int.goldman.calculquebec.cloud:9090"
+CWD = "/var/www/logic_webapp/"
+PROM_HOST = "http://mgmt01.int.dwight.calculquebec.cloud:9090"
 LOCALHOST = gethostname()
 LOCALHOST = LOCALHOST.split(".")[0]
 
@@ -580,7 +581,7 @@ class Job:
         - jobid: integer, Slurm job's ID
         """
         geometry_options = {"right": "2cm", "left": "2cm"}
-        fname = "/centos/pdf/" + str(jobid) + "_summary"
+        fname = CWD + "pdf/" + str(jobid) + "_summary"
         doc = Document(fname, geometry_options=geometry_options)
 
         metrics = ("jobs_cpu_percent", "jobs_rss", "jobs_read_mb", "jobs_write_mb")
