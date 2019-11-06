@@ -1,33 +1,33 @@
 class jobs_exporter::webapp {
 
   exec { 'webapp_venv':
-    command => '/usr/bin/python3 -m venv /opt/webapp',
-    creates => '/opt/webapp/bin/python',
+    command => '/usr/bin/python3 -m venv /var/www/logic_webapp',
+    creates => '/var/www/logic_webapp/bin/python',
     require => Package['python3']
   }
 
   exec { 'pip_flask':
-    cwd => "/opt/webapp/bin/",
-    command => "/opt/webapp/bin/pip install flask",
-    creates => "/opt/webapp/lib/python3.6/site-packages/flask/",
+    cwd => "/var/www/logic_webapp/bin/",
+    command => "/var/www/logic_webapp/bin/pip install flask",
+    creates => "/var/www/logic_webapp/lib/python3.6/site-packages/flask/",
     require => Exec['webapp_venv']
   }
   exec { 'pip_requests':
-    cwd => "/opt/webapp/bin/",
-    command => "/opt/webapp/bin/pip install requests",
-    creates => "/opt/webapp/lib/python3.6/site-packages/requests/",
+    cwd => "/var/www/logic_webapp/bin/",
+    command => "/var/www/logic_webapp/bin/pip install requests",
+    creates => "/var/www/logic_webapp/lib/python3.6/site-packages/requests/",
     require => Exec['webapp_venv']
   }
   exec { 'pip_pylatex':
-    cwd => "/opt/webapp/bin/",
-    command => "/opt/webapp/bin/pip install pylatex",
-    creates => "/opt/webapp/lib/python3.6/site-packages/pylatex/",
+    cwd => "/var/www/logic_webapp/bin/",
+    command => "/var/www/logic_webapp/bin/pip install pylatex",
+    creates => "/var/www/logic_webapp/lib/python3.6/site-packages/pylatex/",
     require => Exec['webapp_venv']
   }
   exec { 'pip_matplotlib':
-    cwd => "/opt/webapp/bin/",
-    command => "/opt/webapp/bin/pip install matplotlib",
-    creates => "/opt/webapp/lib/python3.6/site-packages/matplotlib/",
+    cwd => "/var/www/logic_webapp/bin/",
+    command => "/var/www/logic_webapp/bin/pip install matplotlib",
+    creates => "/var/www/logic_webapp/lib/python3.6/site-packages/matplotlib/",
     require => Exec['webapp_venv']
   }
 
@@ -40,27 +40,27 @@ class jobs_exporter::webapp {
 
   file { 'logic_webapp':
     ensure => 'present',
-    path => '/centos/logic_webapp.py',
+    path => '/var/www/logic_webapp/logic_webapp.py',
     source => "puppet:///modules/jobs_exporter/logic_webapp.py"
   }
   file { 'job.py':
     ensure => 'present',
-    path => '/centos/job.py',
+    path => '/var/www/logic_webapp/job.py',
     source => "puppet:///modules/jobs_exporter/job.py"
   }
 
   file { 'user.py':
     ensure => 'present',
-    path => '/centos/user.py',
+    path => '/var/www/logic_webapp/user.py',
     source => "puppet:///modules/jobs_exporter/user.py"
   }
-  file { '/centos/pdf':
+  file { '/var/www/logic_webapp/pdf':
     ensure => 'directory',
   }
-  file { '/centos/plots':
+  file { '/var/www/logic_webapp/plots':
     ensure => 'directory',
   }
-  file { '/centos/pies':
+  file { '/var/www/logic_webapp/pies':
     ensure => 'directory',
   }
 
