@@ -12,6 +12,8 @@ CWD = "/var/www/logic_webapp/"
 PROM_HOST = "http://mgmt01.int.dwight.calculquebec.cloud:9090"
 LOCALHOST = gethostname()
 LOCALHOST = LOCALHOST.split(".")[0]
+SACCT = "/opt/software/slurm/bin/sacct"
+FORMAT = "--format=Account,User,Start,End,AllocCPUs,AllocTres,NodeList,Elapsed"
 
 Y_LABELS = {
     "jobs_rss": "Resident set size (MB)",
@@ -80,11 +82,8 @@ class Job:
         """
         Parses the output of sacct for the job and fills the associated object attributes
         """
-        SACCT = "/opt/software/slurm/bin/sacct"
-        FORMAT = "--format=Account,User,Start,End,AllocCPUS,AllocTRES,NodeList,Elapsed"
-
         out = subprocess.check_output(
-            [SACCT, "--units=M", "-n", "-p", FORMAT, "-j", str(self.__jobid)]
+            [SACCT, "--units=M", "-X", "-n", "-p", FORMAT, "-j", str(self.__jobid)]
         )
 
         out = out.decode("ascii")
@@ -662,7 +661,7 @@ class Job:
         for core in self.__cpu_time_core.keys():
             tmp_dict = {
                 "core": core,
-                "time": self.__cpu_time_core,
+                "time": self.__cpu_time_core[core],
                 "unit": "s",
                 "percent_of_total": (self.__cpu_time_core[core] / self.__cpu_time_total)
                 * 100,

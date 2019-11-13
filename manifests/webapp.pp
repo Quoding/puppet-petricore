@@ -1,9 +1,16 @@
 class jobs_exporter::webapp {
 
+  package {'mysql-devel':
+    ensure => 'installed'
+  }
   exec { 'webapp_venv':
     command => '/usr/bin/python3 -m venv /var/www/logic_webapp',
     creates => '/var/www/logic_webapp/bin/python',
     require => Package['python3']
+  }
+  
+  exec { 'pip_upgrade':
+    command => "/var/www/logic_webapp/bin/pip install --upgrade pip"
   }
 
   exec { 'pip_flask':
@@ -31,11 +38,24 @@ class jobs_exporter::webapp {
     require => Exec['webapp_venv']
   }
 
+  exec { 'pip_pymysql':
+    cwd => "/var/www/logic_webapp/bin/",
+    command => "/var/www/logic_webapp/bin/pip install pymysql",
+    creates => "/var/www/logic_webapp/lib/python3.6/site-packages/pymysql/",
+    require => Exec['webapp_venv']
+  }
+
+
+
   package { 'texlive':
     ensure => 'installed'
   }
   package { 'texlive-lastpage':
     ensure => 'installed'
+  }
+
+  file { '/var/www/':
+    ensure => 'directory'
   }
 
   file { 'logic_webapp':

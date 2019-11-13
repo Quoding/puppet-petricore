@@ -2,9 +2,14 @@ import subprocess
 import json
 from pwd import getpwuid
 from socket import gethostname
+import db_access
+import pymysql
 
 LOCALHOST = gethostname()
 LOCALHOST = LOCALHOST.split(".")[0]
+
+# Create the database connection
+CONNECTION = db_access.create_db_connection()
 
 
 class User:
@@ -15,9 +20,11 @@ class User:
         self.__storage_info = {}
         self.__storage_info["user"] = self.__username
         self.__storage_info["uid"] = uid
+        self.__jobs = []
 
         # Retrieve the actual storage info
         # self.retrieve_storage_info()
+        self.retrieve_job_map(self.__uid)
 
     def get_storage_info(self):
         """Get the self.__storage_info attribute"""
@@ -25,7 +32,7 @@ class User:
 
     def retrieve_storage_info(self):
         """Function that retrieves storage data for the user, queries lfs quota on the cluster 
-        (Except Graham, see retrieve_storage_info_graham()"""
+        (Except Graham, see retrieve_storage_info_graham())"""
         self.__storage_info["storage"] = []
         # Get /home and /scratch partition since they're based off of users.
         partitions = ("/home", "/scratch")
@@ -66,16 +73,21 @@ class User:
             "/cvmfs/soft.computecanada.ca/custom/bin/diskusage_report"
         ).decode("ascii")
 
+    def retrieve_job_map(self, id_user):
+        sql_parameterized_query = (
+            """SELECT id_job FROM user_job_view WHERE id_user = %s"""
+        )
+
+        with CONNECTION.cursor() as cursor:
+            cursor.execute(sql_parameterized_query, (id_user,))
+            result = cursor.fetchall()
+            self.__jobs = list(
+                [element[0] for element in result]
+            )  # Convert the tuple of single element tuples to a list of elements
+        return self.__jobs
+
 
 if __name__ == "__main__":
-    a = User(3083770)
-    string = """                             Description                Space           # of files
-    Home (user alarouch)              17k/53G              21/500k
- Scratch (user alarouch)             4000/20T              1/1000k
-/project (group alarouch)              0/2048k               0/500k
-/project (group def-alarouch)            16k/1000G               6/500k
-/project (group def-jfaure)           361G/1000G             90k/500k
-/nearline (group def-alarouch)            16k/1000G               6/500k
-/nearline (group def-jfaure)           361G/1000G             90k/500k
-"""
+    a = User(50001)
+
     # a.get_storage_info()
