@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 from pylatex import Document, Section, Figure, NoEscape, NewPage, Command
 from user import User
 from socket import gethostname
+import db_access
 
 CWD = "/var/www/logic_webapp/"
-PROM_HOST = "http://mgmt01.int.dwight.calculquebec.cloud:9090"
+PROM_HOST = "http://mgmt01.int." + db_access.get_domain_name() + ":9090"
 LOCALHOST = gethostname()
 LOCALHOST = LOCALHOST.split(".")[0]
 SACCT = "/opt/software/slurm/bin/sacct"

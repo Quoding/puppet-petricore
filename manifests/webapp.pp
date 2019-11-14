@@ -1,4 +1,4 @@
-class jobs_exporter::webapp {
+class jobs_exporter::webapp (String $domain_name){
 
   package {'mysql-devel':
     ensure => 'installed'
@@ -45,11 +45,10 @@ class jobs_exporter::webapp {
     require => Exec['webapp_venv']
   }
 
-
-
   package { 'texlive':
     ensure => 'installed'
   }
+
   package { 'texlive-lastpage':
     ensure => 'installed'
   }
@@ -63,6 +62,14 @@ class jobs_exporter::webapp {
     path => '/var/www/logic_webapp/logic_webapp.py',
     source => "puppet:///modules/jobs_exporter/logic_webapp.py"
   }
+
+  file { 'config':
+    ensure => 'present',
+    path => '/var/www/logic_webapp/webapp_config',
+    content => epp('puppet:///modules/jobs_exporter/webapp_config', {'domain_name' = $domain_name})
+    source => "puppet:///modules/jobs_exporter/webapp_config"
+  }
+
   file { 'job.py':
     ensure => 'present',
     path => '/var/www/logic_webapp/job.py',
