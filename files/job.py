@@ -7,10 +7,14 @@ import matplotlib.pyplot as plt
 from pylatex import Document, Section, Figure, NoEscape, NewPage, Command
 from user import User
 from socket import gethostname
+import db_access
 
-PROM_HOST = "http://mgmt01.int.goldman.calculquebec.cloud:9090"
+CWD = "/var/www/logic_webapp/"
+PROM_HOST = "http://mgmt01.int." + db_access.get_domain_name() + ":9090"
 LOCALHOST = gethostname()
 LOCALHOST = LOCALHOST.split(".")[0]
+SACCT = "/opt/software/slurm/bin/sacct"
+FORMAT = "--format=Account,User,Start,End,AllocCPUs,AllocTres,NodeList,Elapsed"
 
 Y_LABELS = {
     "jobs_rss": "Resident set size (MB)",
@@ -79,11 +83,8 @@ class Job:
         """
         Parses the output of sacct for the job and fills the associated object attributes
         """
-        SACCT = "/opt/software/slurm/bin/sacct"
-        FORMAT = "--format=Account,User,Start,End,AllocCPUS,AllocTRES,NodeList,Elapsed"
-
         out = subprocess.check_output(
-            [SACCT, "--units=M", "-n", "-p", FORMAT, "-j", str(self.__jobid)]
+            [SACCT, "--units=M", "-X", "-n", "-p", FORMAT, "-j", str(self.__jobid)]
         )
 
         out = out.decode("ascii")
@@ -580,7 +581,7 @@ class Job:
         - jobid: integer, Slurm job's ID
         """
         geometry_options = {"right": "2cm", "left": "2cm"}
-        fname = "/centos/pdf/" + str(jobid) + "_summary"
+        fname = CWD + "pdf/" + str(jobid) + "_summary"
         doc = Document(fname, geometry_options=geometry_options)
 
         metrics = ("jobs_cpu_percent", "jobs_rss", "jobs_read_mb", "jobs_write_mb")
@@ -661,7 +662,7 @@ class Job:
         for core in self.__cpu_time_core.keys():
             tmp_dict = {
                 "core": core,
-                "time": self.__cpu_time_core,
+                "time": self.__cpu_time_core[core],
                 "unit": "s",
                 "percent_of_total": (self.__cpu_time_core[core] / self.__cpu_time_total)
                 * 100,

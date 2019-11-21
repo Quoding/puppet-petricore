@@ -4,6 +4,7 @@ from flask import Flask, send_file
 import os
 from job import Job
 
+CWD = "/var/www/logic_webapp/"
 
 app = Flask(__name__)
 
@@ -48,7 +49,7 @@ def job_info(jobid):
 def job_plot(jobid, metric):
     job = Job(jobid)
     filename = metric + ".png"
-    dirname = "/centos/plots/" + str(jobid) + "/"
+    dirname = CWD + "plots/" + str(jobid) + "/"
 
     if not os.path.isfile(dirname + filename):
         try:
@@ -69,7 +70,7 @@ def job_pie(jobid):
     metrics = ("jobs_system_time", "jobs_user_time")
     # metrics = ("jobs_cpu_time_core",)
     filename = str(jobid)
-    dirname = "/centos/pies/" + str(jobid) + "/"
+    dirname = CWD + "pies/" + str(jobid) + "/"
 
     for metric in metrics:
         filename += metric + "_"
@@ -92,7 +93,7 @@ def job_pie(jobid):
 def job_pdf(jobid):
     job = Job(jobid)
     filename = str(jobid) + "_summary.pdf"
-    dirname = "/centos/pdf/"
+    dirname = CWD + "pdf/"
     if not os.path.isfile(dirname + filename):
         try:
             job.make_pdf(jobid, filename, dirname)
