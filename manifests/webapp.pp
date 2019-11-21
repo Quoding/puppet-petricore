@@ -1,6 +1,10 @@
 class jobs_exporter::webapp (String $domain_name){
 
+<<<<<<< HEAD
   package { 'mysql-devel':
+=======
+  package {'mysql-devel':
+>>>>>>> 274e3816dd8b399f8232f64accbc76e32267d443
     ensure => 'installed'
   }
   exec { 'webapp_venv':
@@ -66,7 +70,12 @@ class jobs_exporter::webapp (String $domain_name){
   file { 'config':
     ensure => 'present',
     path => '/var/www/logic_webapp/webapp_config',
+<<<<<<< HEAD
     content => epp('jobs_exporter/webapp_config', {'domain_name' = $domain_name}),
+=======
+    content => epp('puppet:///modules/jobs_exporter/webapp_config', {'domain_name' = $domain_name})
+    source => "puppet:///modules/jobs_exporter/webapp_config"
+>>>>>>> 274e3816dd8b399f8232f64accbc76e32267d443
   }
 
   file { 'job.py':
