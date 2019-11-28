@@ -9,10 +9,6 @@ class jobs_exporter::webapp (String $domain_name){
     require => Package['python3']
   }
   
-  exec { 'pip_upgrade':
-    command => "/var/www/logic_webapp/bin/pip install --upgrade pip"
-  }
-
   exec { 'pip_flask':
     cwd => "/var/www/logic_webapp/bin/",
     command => "/var/www/logic_webapp/bin/pip install flask",
