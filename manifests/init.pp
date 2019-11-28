@@ -12,12 +12,6 @@ class jobs_exporter {
     ensure => 'installed'
   }
 
-  file {'epilog':
-    replace => true,
-    path => '/etc/slurm/epilog',
-    source => "puppet:///modules/jobs_exporter/epilog"  
-  }
-
   exec { 'jobs_exporter_venv':
     command => '/usr/bin/python3 -m venv /opt/jobs_exporter',
     creates => '/opt/jobs_exporter/bin/python',
