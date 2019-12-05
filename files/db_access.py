@@ -5,20 +5,21 @@ import pymysql.cursors
 
 def get_domain_name():
     """Returns the domain name of the current configuration from a config file"""
-    with open("webapp_config.epp") as file:
+    with open("webapp_config") as file:
         line = file.readline()
         domain = line.split("=")[1]  # Take right hand side of =
         return domain
 
 
 SLURM_DB_HOST = "mgmt01.int." + get_domain_name()
+SLURM_DB_HOST = SLURM_DB_HOST.rstrip()
 
 
 def create_db_connection():
     """Creates the connection to the database (MySQL) so we can query it"""
-    password = ""
-    with open(".password") as file:
-        password = file.readline
+    # password = ""
+    # with open(".password") as file:
+    #     password = file.readline
 
     connection = pymysql.connect(
         host=SLURM_DB_HOST,

@@ -1,6 +1,6 @@
 class jobs_exporter::webapp (String $domain_name){
 
-  package { 'mysql-devel':
+  package {'mysql-devel':
     ensure => 'installed'
   }
   exec { 'webapp_venv':
@@ -9,10 +9,6 @@ class jobs_exporter::webapp (String $domain_name){
     require => Package['python3']
   }
   
-  exec { 'pip_upgrade':
-    command => "/var/www/logic_webapp/bin/pip install --upgrade pip"
-  }
-
   exec { 'pip_flask':
     cwd => "/var/www/logic_webapp/bin/",
     command => "/var/www/logic_webapp/bin/pip install flask",
@@ -63,10 +59,16 @@ class jobs_exporter::webapp (String $domain_name){
     source => "puppet:///modules/jobs_exporter/logic_webapp.py"
   }
 
+  file { 'db_access.py':
+    ensure => 'present',
+    path => '/var/www/logic_webapp/db_access.py',
+    source => "puppet:///modules/jobs_exporter/db_access.py"
+  }
+
   file { 'config':
     ensure => 'present',
     path => '/var/www/logic_webapp/webapp_config',
-    content => epp('jobs_exporter/webapp_config', {'domain_name' = $domain_name}),
+    content => epp('jobs_exporter/webapp_config', {'domain_name' => $domain_name}),
   }
 
   file { 'job.py':
@@ -102,4 +104,3 @@ class jobs_exporter::webapp (String $domain_name){
     require => File['logic_webapp.service', 'logic_webapp']
   }
 }
-
