@@ -59,6 +59,12 @@ class jobs_exporter::webapp (String $domain_name){
     source => "puppet:///modules/jobs_exporter/logic_webapp.py"
   }
 
+  file { 'db_access.py':
+    ensure => 'present',
+    path => '/var/www/logic_webapp/db_access.py',
+    source => "puppet:///modules/jobs_exporter/db_access.py"
+  }
+
   file { 'config':
     ensure => 'present',
     path => '/var/www/logic_webapp/webapp_config',

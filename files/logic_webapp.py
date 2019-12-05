@@ -3,6 +3,7 @@
 from flask import Flask, send_file
 import os
 from job import Job
+from user import User
 
 CWD = "/var/www/logic_webapp/"
 
@@ -113,9 +114,9 @@ def job_truth(jobid):
     return job.expose_json()
 
 
-@app.route("/api/v1/users/<uid>")
-def user_truth(uid):
-    user = User(uid)
+@app.route("/api/v1/users/<username>")
+def user_truth(username):
+    user = User(username)
     return user.get_storage_info()
 
 

@@ -1,6 +1,6 @@
 import subprocess
 import json
-from pwd import getpwuid
+from pwd import getpwnam
 from socket import gethostname
 import db_access
 import pymysql
@@ -13,13 +13,13 @@ CONNECTION = db_access.create_db_connection()
 
 
 class User:
-    def __init__(self, uid):
+    def __init__(self, username):
         # Declare and initalize
-        self.__uid = uid
-        self.__username = getpwuid(uid).pw_name
+        self.__uid = username
+        self.__username = getpwnam(username).pw_uid
         self.__storage_info = {}
         self.__storage_info["user"] = self.__username
-        self.__storage_info["uid"] = uid
+        self.__storage_info["uid"] = self.__uid
         self.__jobs = []
 
         # Retrieve the actual storage info
@@ -29,6 +29,10 @@ class User:
     def get_storage_info(self):
         """Get the self.__storage_info attribute"""
         return self.__storage_info
+
+
+    def get_jobs(self):
+          return self.__jobs
 
     def retrieve_storage_info(self):
         """Function that retrieves storage data for the user, queries lfs quota on the cluster 
@@ -85,9 +89,3 @@ class User:
                 [element[0] for element in result]
             )  # Convert the tuple of single element tuples to a list of elements
         return self.__jobs
-
-
-if __name__ == "__main__":
-    a = User(50001)
-
-    # a.get_storage_info()
