@@ -5,7 +5,7 @@ import pymysql.cursors
 
 def get_domain_name():
     """Returns the domain name of the current configuration from a config file"""
-    with open("webapp_config") as file:
+    with open("/var/www/logic_webapp/webapp_config") as file:
         line = file.readline()
         domain = line.split("=")[1]  # Take right hand side of =
         return domain
