@@ -11,7 +11,7 @@ def get_domain_name():
         return domain
 
 
-SLURM_DB_HOST = "mgmt01.int." + get_domain_name()
+SLURM_DB_HOST = "mgmt1.int." + get_domain_name()
 SLURM_DB_HOST = SLURM_DB_HOST.rstrip()
 
 
