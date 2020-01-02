@@ -1,6 +1,6 @@
 class jobs_exporter::db {
-  require mysql
-  require slurm
+  profile::slurm::accounting
+
 
   file { '/opt/petricore_db':
     ensure => 'directory'
