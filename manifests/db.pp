@@ -1,4 +1,7 @@
-class jobs_exporter::db (String $domain_name) {
+class jobs_exporter::db {
+  require mysql
+  require slurm
+
   file { '/opt/petricore_db':
     ensure => 'directory'
   }
