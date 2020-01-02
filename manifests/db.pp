@@ -1,5 +1,5 @@
 class jobs_exporter::db {
-  profile::slurm::accounting
+  require profile::slurm::accounting
 
 
   file { '/opt/petricore_db':
