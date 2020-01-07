@@ -7,7 +7,7 @@ def get_domain_name():
     """Returns the domain name of the current configuration from a config file"""
     with open("/var/www/logic_webapp/webapp_config") as file:
         line = file.readline()
-        domain = line.split("=")[1]  # Take right hand side of =
+        domain = line.split("=")[1].rstrip()  # Take right hand side of = and remove \n
         return domain
 
 

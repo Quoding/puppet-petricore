@@ -126,27 +126,22 @@ class Job:
         """
 
         metrics = ("jobs_cpu_percent", "jobs_rss", "jobs_opened_files")
-
+        modifiers = [("avg", "max"), ("max",), ("avg",)]
         # Request the METRICS array since they all have the same form (sum max and avg) over the length of the job and are series OVER TIME
-        for name in metrics:
-            if name == "jobs_cpu_percent":
-                modifiers = ("avg", "max")
-            elif name == "jobs_rss":
-                modifiers = ("max",)
-            elif name == "jobs_opened_files":
-                modifiers = ("avg",)
-            for modifier in modifiers:
+        for i in range(len(metrics)):
+            for modifier in modifiers[i]:
                 tmp_list = []
                 query_string = (
                     modifier
                     + "_over_time("
-                    + name
+                    + metrics[i]
                     + '{slurm_job="'
                     + str(self.__jobid)
                     + '"}['
                     + str(self.__step)
                     + "s])"
                 )
+
                 params = {"query": query_string, "time": self.__end_time}
                 response = requests.get(API_URL, params=params)
                 # print(API_URL)
