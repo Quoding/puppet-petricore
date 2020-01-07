@@ -11,8 +11,9 @@ import db_access
 
 CWD = "/var/www/logic_webapp/"
 PROM_HOST = "http://mgmt1.int." + db_access.get_domain_name() + ":9090"
-LOCALHOST = gethostname()
-LOCALHOST = LOCALHOST.split(".")[0]
+API_URL = PROM_HOST + "/api/v1/query"
+LOCALHOST = gethostname().split(".")[0] #charlie, sigma, ... [name].calculquebec.cloud
+# LOCALHOST = LOCALHOST.split(".")[0] 
 SACCT = "/opt/software/slurm/bin/sacct"
 FORMAT = "--format=Account,User,Start,End,AllocCPUs,AllocTres,NodeList,Elapsed"
 
@@ -123,9 +124,6 @@ class Job:
         """
         Pull data from Prometheus HTTP API with a hardcoded list of metrics and fills the associated object attributes
         """
-
-        # CONSTANT
-        API_URL = PROM_HOST + "/api/v1/query"
 
         metrics = ("jobs_cpu_percent", "jobs_rss", "jobs_opened_files")
 

@@ -150,7 +150,7 @@ def get_proc_data(pids, numcpus, jobid):
     opened_files = set()
     res_set_size = 0
     cpu_usage = 0
-    cpu_usage_per_core = 0
+    cpu_usage_per_core = 0 #On average
 
     for pid in pids:
         p = psutil.Process(pid)
