@@ -15,8 +15,8 @@ CONNECTION = db_access.create_db_connection()
 class User:
     def __init__(self, username):
         # Declare and initalize
-        self.__uid = username
-        self.__username = getpwnam(username).pw_uid
+        self.__username = username
+        self.__uid = getpwnam(username).pw_uid
         self.__storage_info = {}
         self.__storage_info["user"] = self.__username
         self.__storage_info["uid"] = self.__uid
