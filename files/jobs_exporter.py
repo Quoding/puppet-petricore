@@ -159,7 +159,6 @@ def get_proc_data(pids, numcpus, jobid):
             interval=0.1
         )  # Request cpu percent out of the "oneshot" below so it's queried properly
 
-        cpu_usage_per_core += p.cpu_
         cpu_usage_per_core += cpu_usage / numcpus
 
         with p.oneshot():
@@ -309,7 +308,6 @@ def retrieve_and_expose(timer):
                     retrieve_file_data(job, jobid, user, fullname)
 
                     # Send data to the pushgateway
-                    # print(cuc)
                     push_to_gateway(
                         "localhost:9091", job="jobs_exporter", registry=REGISTRY
                     )
