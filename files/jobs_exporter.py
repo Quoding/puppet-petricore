@@ -157,7 +157,9 @@ def get_proc_data(pids, numcpus, jobid):
         name = p.name()
         cpu_usage += p.cpu_percent(
             interval=0.1
-        )  # Request cpu percet out of oneshot so it's queried properly
+        )  # Request cpu percent out of the "oneshot" below so it's queried properly
+
+        cpu_usage_per_core += p.cpu_
         cpu_usage_per_core += cpu_usage / numcpus
 
         with p.oneshot():
@@ -261,11 +263,9 @@ def retrieve_file_data(job, jobid, user, dirname):
                     line.rstrip().split()[1]
                 )  # Could change for a for i in range() and remove the append...
 
-    # Expose both data sets to Prometheus
+    # Expose data sets to Prometheus
     ut.labels(instance=HOST, slurm_job=jobid).set(times[0])
     st.labels(instance=HOST, slurm_job=jobid).set(times[1])
-
-    # Expose data to Prometheus
     sp.labels(instance=HOST, slurm_job=jobid).set(len(tasks))
 
     # Get process-specific data with psutil if tasks list isn't empty
@@ -275,10 +275,12 @@ def retrieve_file_data(job, jobid, user, dirname):
 
 
 def retrieve_and_expose(timer):
+    iter_empty = 0 #Prevents from sending delete to the pushgateway if no job was pushed two times in a row (i.e. all the jobs are done and accounted for for now)
+
     while True:
         # List for found jobs
         found = []
-
+        empty = True
         # These `for loops` count the number of spawned processes by a task.
         for path, dirs, files in os.walk(
             LOOKUP_DIR  # /sys/fs/cgroup/cpuacct/slurm because all information needed right now is there (or wherever your cgroups are mounted)
@@ -288,6 +290,7 @@ def retrieve_and_expose(timer):
             ) in fnmatch.filter(  # Look for the REGEX (global constant, change this for other schedulers perhaps...), default is "task_*"
                 dirs, REGEX
             ):
+                empty = False
                 # Find full name of the path
                 fullname = os.path.abspath(os.path.join(path, f))
                 # Find the job ID
@@ -300,21 +303,28 @@ def retrieve_and_expose(timer):
                 )  # Used for file names
                 uid = user.split("_")[1]
 
+                #Avoid finding the same job twice in the same iteration and skips blacklist users.
                 if jobid not in found and uid not in BLACKLIST:
                     found.append(jobid)
                     retrieve_file_data(job, jobid, user, fullname)
 
                     # Send data to the pushgateway
-                    print(cuc)
+                    # print(cuc)
                     push_to_gateway(
                         "localhost:9091", job="jobs_exporter", registry=REGISTRY
                     )
-
+        
+        if empty:
+            iter_empty += 1
+        else:
+            iter_empty = 0
         # Wait the set amount of time before re-retrieving and exposing the next set of data.
         time.sleep(timer)
 
+
         # Delete from Pushgateway, else it creates flat lines for jobs that don't exist anymore.
-        delete_from_gateway("localhost:9091", job="jobs_exporter")
+        if iter_empty <= 1:
+            delete_from_gateway("localhost:9091", job="jobs_exporter")
 
 
 if __name__ == "__main__":
