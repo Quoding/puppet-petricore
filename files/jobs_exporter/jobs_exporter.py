@@ -30,7 +30,8 @@ HOST = socket.gethostname()
 HOST = HOST.split(".")[0]  # Get the node name
 REGISTRY = CollectorRegistry()
 BLACKLIST = []
-LOOKUP_DIR = "/sys/fs/cgroup/cpuacct/slurm/"
+CPUACCT_DIR = "/sys/fs/cgroup/cpuacct/slurm/"
+CPUSET_DIR = "/sys/fs/cgroup/cpuset/slurm/"
 REGEX = "task_*"
 
 
@@ -122,6 +123,10 @@ cpu_percent_per_core = Gauge(
     registry=REGISTRY,
 )
 
+# Mappings for jobs
+job_cpus_map = {}
+job_proc_name_map = {}
+
 
 def sigint_handler(sig, frame):
     delete_from_gateway("localhost:9091", job="jobs_exporter")
@@ -137,8 +142,32 @@ def load_blacklist(filename):
         BLACKLIST = blacklist.read().split("\n")
 
 
-def get_proc_data(pids, numcpus, jobid):
+def remove_inactive_jobs_from_collectors(jobid):
+    """Removes jobs that are done from the collectors so we don't keep pushing them
+    
+    -----param-----
+    jobid: id of the job we want to delete from the collectors
+    """
+    sp.remove(HOST, jobid)
+    of.remove(HOST, jobid)
+    st.remove(HOST, jobid)
+    ut.remove(HOST, jobid)
+    us.remove(HOST, jobid)
+    cut.remove(HOST, jobid)
+    read.remove(HOST, jobid)
+    write.remove(HOST, jobid)
+    read_count.remove(HOST, jobid)
+    write_count.remove(HOST, jobid)
+    rss.remove(HOST, jobid)
+    cpu_percent.remove(HOST, jobid)
+    cpu_percent_per_core.remove(HOST, jobid)
+    for proc_name in tuple(job_proc_name_map.values()):
+        tc.remove(HOST, jobid, str(proc_name))
+    for cpu in tuple(job_cpus_map.values()):
+        cuc.remove(HOST, jobid.cpu)
 
+
+def get_proc_data(pids, numcpus, jobid):
     # Set jobs_uses_scratch to false here so in case no fildes links to scratch fs, it is already handled.
     us.labels(instance=HOST, slurm_job=jobid).set(0)
 
@@ -150,14 +179,16 @@ def get_proc_data(pids, numcpus, jobid):
     opened_files = set()
     res_set_size = 0
     cpu_usage = 0
-    cpu_usage_per_core = 0 #On average
+    cpu_usage_per_core = 0  # On average
+    proc_names = []
 
     for pid in pids:
         p = psutil.Process(pid)
         name = p.name()
-        cpu_usage += p.cpu_percent(
-            interval=0.1
-        )  # Request cpu percent out of the "oneshot" below so it's queried properly
+        proc_names.append(name)
+
+        # Request cpu percent out of the "oneshot" below so it's queried properly
+        cpu_usage += p.cpu_percent(interval=0.1)
 
         cpu_usage_per_core += cpu_usage / numcpus
 
@@ -169,7 +200,6 @@ def get_proc_data(pids, numcpus, jobid):
             write_mbytes += p.io_counters()[3] / 1048576  # In MB
             res_set_size += p.memory_info()[0] / 1048576  # In MB
             opened_files.update(p.open_files())
-
             threads = p.num_threads()
 
             tc.labels(instance=HOST, slurm_job=jobid, proc_name=name).set(threads)
@@ -186,6 +216,9 @@ def get_proc_data(pids, numcpus, jobid):
             for p in p.threads():
                 pids.remove(p[0])
 
+    # Keep the job -> proc_name map up to date. Useful to remove old jobs from the pushgateway.
+    job_proc_name_map[jobid] = proc_names
+
     # Expose data to Prometheus
     of.labels(instance=HOST, slurm_job=jobid).set(len(set(opened_files)))
     read.labels(instance=HOST, slurm_job=jobid).set(read_mbytes)
@@ -198,20 +231,26 @@ def get_proc_data(pids, numcpus, jobid):
 
 
 def retrieve_file_data(job, jobid, user, dirname):
+    """Retrieves the data stored in different files within the cgroups. If tasks
+    are found, retrieve the process data (cpu%, cputime, R/W counts,...) associated
+    with said tasks.
+    
+    ------params------
+    job: job name to find cgroup
+    jobid: jobid for collector labels
+    user: username to find the right cgroup
+    dirname: full name of the path to find tasks
+    """
     # Declarations
     tasks = []
     times = []
     cpus = []
 
     # Semi-static paths which change depending on user and job. Control groups.
-    cpuset_path = "/sys/fs/cgroup/cpuset/slurm/" + user + "/" + job + "/cpuset.cpus"
-    usage_percpu_path = (
-        "/sys/fs/cgroup/cpuacct/slurm/" + user + "/" + job + "/cpuacct.usage_percpu"
-    )
-    usage_total_path = (
-        "/sys/fs/cgroup/cpuacct/slurm/" + user + "/" + job + "/cpuacct.usage"
-    )
-    stat_path = "/sys/fs/cgroup/cpuacct/slurm/" + user + "/" + job + "/cpuacct.stat"
+    cpuset_path = CPUSET_DIR + user + "/" + job + "/cpuset.cpus"
+    usage_percpu_path = CPUACCT_DIR + user + "/" + job + "/cpuacct.usage_percpu"
+    usage_total_path = CPUACCT_DIR + user + "/" + job + "/cpuacct.usage"
+    stat_path = CPUACCT_DIR + user + "/" + job + "/cpuacct.stat"
     task_path = dirname + "/tasks"
 
     # Look for which CPUs got allocated to this job
@@ -225,6 +264,9 @@ def retrieve_file_data(job, jobid, user, dirname):
                         cpus.append(i)
                 else:
                     cpus.append(int(alloc))
+
+    # Keep the job -> cpus map up to date with what was found. Useful to remove terminated jobs from the pushgateway
+    job_cpus_map[jobid] = cpus
 
     # Cross-reference the allocated CPUs with their individual usages in nanoseconds
     if os.path.isfile(usage_percpu_path):
@@ -271,24 +313,22 @@ def retrieve_file_data(job, jobid, user, dirname):
     if tasks:
         tasks = list(map(int, tasks))
         get_proc_data(tasks, len(cpus), jobid)
+    return cpus
 
 
 def retrieve_and_expose(timer):
-    iter_empty = 0 #Prevents from sending delete to the pushgateway if no job was pushed two times in a row (i.e. all the jobs are done and accounted for for now)
-
+    # Prevents from sending delete to the pushgateway if no job was pushed two times in a row (i.e. all the jobs are done and accounted for for now)
+    iter_empty = 0
+    last_iter_found = []
     while True:
         # List for found jobs
         found = []
         empty = True
+
         # These `for loops` count the number of spawned processes by a task.
-        for path, dirs, files in os.walk(
-            LOOKUP_DIR  # /sys/fs/cgroup/cpuacct/slurm because all information needed right now is there (or wherever your cgroups are mounted)
-        ):
-            for (
-                f
-            ) in fnmatch.filter(  # Look for the REGEX (global constant, change this for other schedulers perhaps...), default is "task_*"
-                dirs, REGEX
-            ):
+        for path, dirs, files in os.walk(CPUACCT_DIR):
+            # Look for the REGEX (global constant, change this for other schedulers perhaps...), default is "task_*"
+            for f in fnmatch.filter(dirs, REGEX):
                 empty = False
                 # Find full name of the path
                 fullname = os.path.abspath(os.path.join(path, f))
@@ -296,37 +336,43 @@ def retrieve_and_expose(timer):
                 job = re.search("(job_)[0-9]+", fullname).group(
                     0
                 )  # Used for file names
-                jobid = job.split("_")[1]  # Used to push metrics at the right job
+                # Used to push metrics at the right job
+                jobid = job.split("_")[1]
                 user = re.search("(uid_)[0-9]+", fullname).group(
                     0
                 )  # Used for file names
                 uid = user.split("_")[1]
 
-                #Avoid finding the same job twice in the same iteration and skips blacklist users.
+                # Avoid finding the same job twice in the same iteration and skips blacklist users.
                 if jobid not in found and uid not in BLACKLIST:
                     found.append(jobid)
                     retrieve_file_data(job, jobid, user, fullname)
 
-                    # Send data to the pushgateway
-                    push_to_gateway(
-                        "localhost:9091", job="jobs_exporter", registry=REGISTRY
-                    )
-        
         if empty:
             iter_empty += 1
         else:
             iter_empty = 0
+
+        # Find the list of newly terminated jobs
+        diff = list(set(last_iter_found) - set(found))
+        for jobid in diff:
+            remove_inactive_jobs_from_collectors(jobid)
+
+        if not empty:
+            # Send data to the pushgateway
+            push_to_gateway("localhost:9091", job="jobs_exporter", registry=REGISTRY)
+
         # Wait the set amount of time before re-retrieving and exposing the next set of data.
         time.sleep(timer)
-
 
         # Delete from Pushgateway, else it creates flat lines for jobs that don't exist anymore.
         if iter_empty <= 1:
             delete_from_gateway("localhost:9091", job="jobs_exporter")
 
+        last_iter_found = found.copy()
+
 
 if __name__ == "__main__":
-
     # Retrieve args passed to the program.
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -370,4 +416,3 @@ if __name__ == "__main__":
             print(str(e))
         finally:
             delete_from_gateway("localhost:9091", job="jobs_exporter")
-
