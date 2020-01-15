@@ -14,6 +14,7 @@ import re
 import time
 import socket
 import argparse
+import collections
 from prometheus_client import (
     Gauge,
     start_http_server,
@@ -24,10 +25,10 @@ from prometheus_client import (
 import signal
 import sys
 import psutil
+import collections
 
 # Global Constants
-HOST = socket.gethostname()
-HOST = HOST.split(".")[0]  # Get the node name
+HOST = socket.gethostname().split(".")[0]  # Get node name
 REGISTRY = CollectorRegistry()
 BLACKLIST = []
 CPUACCT_DIR = "/sys/fs/cgroup/cpuacct/slurm/"
@@ -125,7 +126,9 @@ cpu_percent_per_core = Gauge(
 
 # Mappings for jobs
 job_cpus_map = {}
-job_proc_name_map = {}
+job_proc_name_map_current = {}
+# For comparing if a process in a job has terminated and therefore needs to be removed from the collectors.
+job_proc_name_map_last = {}
 
 
 def sigint_handler(sig, frame):
@@ -142,9 +145,21 @@ def load_blacklist(filename):
         BLACKLIST = blacklist.read().split("\n")
 
 
+def remove_old_procs(cur_map, last_map, jobid):
+    """Remove a process which was there in the last iteration but isn't appearing in the newest iteration of the scraping
+
+    -----params-----
+    cur_map: job -> proc mapping for the current iteration
+    last_map: job -> proc mapping for the last iteration (just before cur_map)
+    """
+    for proc in last_map:
+        if proc not in cur_map:
+            tc.remove(HOST, jobid, proc)
+
+
 def remove_inactive_jobs_from_collectors(jobid):
     """Removes jobs that are done from the collectors so we don't keep pushing them
-    
+
     -----param-----
     jobid: id of the job we want to delete from the collectors
     """
@@ -161,10 +176,14 @@ def remove_inactive_jobs_from_collectors(jobid):
     rss.remove(HOST, jobid)
     cpu_percent.remove(HOST, jobid)
     cpu_percent_per_core.remove(HOST, jobid)
-    for proc_name in tuple(job_proc_name_map.values()):
-        tc.remove(HOST, jobid, str(proc_name))
-    for cpu in tuple(job_cpus_map.values()):
-        cuc.remove(HOST, jobid.cpu)
+    print(job_proc_name_map_current)
+    for proc_name in job_proc_name_map_current[jobid]:
+        print(proc_name)
+        print(jobid)
+        tc.remove(HOST, jobid, proc_name)
+        print("After remove")
+    for cpu in job_cpus_map[jobid]:
+        cuc.remove(HOST, jobid, cpu)
 
 
 def get_proc_data(pids, numcpus, jobid):
@@ -202,7 +221,8 @@ def get_proc_data(pids, numcpus, jobid):
             opened_files.update(p.open_files())
             threads = p.num_threads()
 
-            tc.labels(instance=HOST, slurm_job=jobid, proc_name=name).set(threads)
+            tc.labels(instance=HOST, slurm_job=jobid,
+                      proc_name=name).set(threads)
 
             # Looks for scratch usage in the opened files
             for file in opened_files:
@@ -217,7 +237,14 @@ def get_proc_data(pids, numcpus, jobid):
                 pids.remove(p[0])
 
     # Keep the job -> proc_name map up to date. Useful to remove old jobs from the pushgateway.
-    job_proc_name_map[jobid] = proc_names
+    job_proc_name_map_current[jobid] = proc_names
+
+    # Insures there has been at least one iteration before comparing if a process has terminated (in order not to crash the program)
+    if jobid in job_proc_name_map_last:
+        remove_old_procs(
+            job_proc_name_map_current[jobid], job_proc_name_map_last[jobid], jobid
+        )
+    job_proc_name_map_last[jobid] = proc_names
 
     # Expose data to Prometheus
     of.labels(instance=HOST, slurm_job=jobid).set(len(set(opened_files)))
@@ -226,7 +253,8 @@ def get_proc_data(pids, numcpus, jobid):
     read_count.labels(instance=HOST, slurm_job=jobid).set(read_cnt)
     write_count.labels(instance=HOST, slurm_job=jobid).set(write_cnt)
     rss.labels(instance=HOST, slurm_job=jobid).set(res_set_size)
-    cpu_percent_per_core.labels(instance=HOST, slurm_job=jobid).set(cpu_usage_per_core)
+    cpu_percent_per_core.labels(
+        instance=HOST, slurm_job=jobid).set(cpu_usage_per_core)
     cpu_percent.labels(instance=HOST, slurm_job=jobid).set(cpu_usage)
 
 
@@ -234,7 +262,7 @@ def retrieve_file_data(job, jobid, user, dirname):
     """Retrieves the data stored in different files within the cgroups. If tasks
     are found, retrieve the process data (cpu%, cputime, R/W counts,...) associated
     with said tasks.
-    
+
     ------params------
     job: job name to find cgroup
     jobid: jobid for collector labels
@@ -360,7 +388,8 @@ def retrieve_and_expose(timer):
 
         if not empty:
             # Send data to the pushgateway
-            push_to_gateway("localhost:9091", job="jobs_exporter", registry=REGISTRY)
+            push_to_gateway("localhost:9091",
+                            job="jobs_exporter", registry=REGISTRY)
 
         # Wait the set amount of time before re-retrieving and exposing the next set of data.
         time.sleep(timer)
@@ -398,7 +427,8 @@ if __name__ == "__main__":
     # Retrieve and expose data to Prometheus
     if args.timer:
         print(
-            "[+] Started the exporter with an interval of " + str(args.timer) + "s [+]"
+            "[+] Started the exporter with an interval of " +
+            str(args.timer) + "s [+]"
         )
         try:
             retrieve_and_expose(args.timer)
