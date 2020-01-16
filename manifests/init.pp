@@ -18,9 +18,9 @@ class jobs_exporter {
     require => Package['python3']
   }
 
-  exec { 'pip_upgrade':
-    command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
-  }
+  # exec { 'pip_upgrade':
+  #   command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
+  # }
 
   exec { 'pip_prometheus':
     cwd => "/opt/jobs_exporter/bin/",
@@ -35,16 +35,37 @@ class jobs_exporter {
     require => Exec['jobs_exporter_venv']
   }
 
-  file { 'jobs_exporter.service':
-    ensure => 'present',
-    path => '/etc/systemd/system/jobs_exporter.service',
-    source => "puppet:///modules/jobs_exporter/jobs_exporter.service"
+  # file { 'jobs_exporter.service':
+  #   ensure => 'present',
+  #   path => '/etc/systemd/system/jobs_exporter.service',
+  #   source => "puppet:///modules/jobs_exporter/jobs_exporter.service"
+  # }
+
+  # file { 'jobs_exporter':
+  #   ensure => 'present',
+  #   path => '/usr/sbin/jobs_exporter',
+  #   source => "puppet:///modules/jobs_exporter/jobs_exporter.py"
+  # }
+
+  file { '/opt/petricore':
+    ensure => 'directory',
   }
 
-  file { 'jobs_exporter':
+  file { 'petricore-release':
     ensure => 'present',
-    path => '/usr/sbin/jobs_exporter',
-    source => "puppet:///modules/jobs_exporter/jobs_exporter.py"
+    path => '/opt/petricore/petricore-release',
+    source => "http://",
+    replace => 'false'
+  }
+
+  exec {'unzip_release':
+    command => "tar -xzf /petricore/petricore-release.tar.gz",
+    creates => "/petricore/petricore-release"
+  }
+
+  exec { 'install.sh':
+    command => "./centos/petricore-release/jobs_exporter/install.sh",
+    creates => "/usr/sbin jobs_exporter"
   }
 
   service { 'jobs_exporter':

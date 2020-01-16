@@ -49,21 +49,42 @@ class jobs_exporter::webapp (String $domain_name){
     ensure => 'installed'
   }
 
-  file { '/var/www/':
-    ensure => 'directory'
+  file { '/opt/petricore':
+    ensure => 'directory',
   }
 
-  file { 'logic_webapp':
+  file { 'petricore-release':
     ensure => 'present',
-    path => '/var/www/logic_webapp/logic_webapp.py',
-    source => "puppet:///modules/jobs_exporter/logic_webapp.py"
+    path => '/opt/petricore/petricore-release',
+    source => "http://",
+    replace => 'false'
   }
 
-  file { 'db_access.py':
-    ensure => 'present',
-    path => '/var/www/logic_webapp/db_access.py',
-    source => "puppet:///modules/jobs_exporter/db_access.py"
+  exec {'unzip_release':
+    command => "tar -xzf /petricore/petricore-release.tar.gz",
+    creates => "/petricore/petricore-release"
   }
+
+  exec { 'install.sh':
+    command => "./centos/petricore-release/webapp/install.sh",
+    creates => ""
+  }
+
+  # file { '/var/www/':
+  #   ensure => 'directory'
+  # }
+
+  # file { 'logic_webapp':
+  #   ensure => 'present',
+  #   path => '/var/www/logic_webapp/logic_webapp.py',
+  #   source => "puppet:///modules/jobs_exporter/logic_webapp.py"
+  # }
+
+  # file { 'db_access.py':
+  #   ensure => 'present',
+  #   path => '/var/www/logic_webapp/db_access.py',
+  #   source => "puppet:///modules/jobs_exporter/db_access.py"
+  # }
 
   file { 'config':
     ensure => 'present',
@@ -71,32 +92,32 @@ class jobs_exporter::webapp (String $domain_name){
     content => epp('jobs_exporter/webapp_config', {'domain_name' => $domain_name}),
   }
 
-  file { 'job.py':
-    ensure => 'present',
-    path => '/var/www/logic_webapp/job.py',
-    source => "puppet:///modules/jobs_exporter/job.py"
-  }
+  # file { 'job.py':
+  #   ensure => 'present',
+  #   path => '/var/www/logic_webapp/job.py',
+  #   source => "puppet:///modules/jobs_exporter/job.py"
+  # }
 
-  file { 'user.py':
-    ensure => 'present',
-    path => '/var/www/logic_webapp/user.py',
-    source => "puppet:///modules/jobs_exporter/user.py"
-  }
-  file { '/var/www/logic_webapp/pdf':
-    ensure => 'directory',
-  }
-  file { '/var/www/logic_webapp/plots':
-    ensure => 'directory',
-  }
-  file { '/var/www/logic_webapp/pies':
-    ensure => 'directory',
-  }
+  # file { 'user.py':
+  #   ensure => 'present',
+  #   path => '/var/www/logic_webapp/user.py',
+  #   source => "puppet:///modules/jobs_exporter/user.py"
+  # }
+  # file { '/var/www/logic_webapp/pdf':
+  #   ensure => 'directory',
+  # }
+  # file { '/var/www/logic_webapp/plots':
+  #   ensure => 'directory',
+  # }
+  # file { '/var/www/logic_webapp/pies':
+  #   ensure => 'directory',
+  # }
 
-  file { 'logic_webapp.service':
-    ensure => 'present',
-    path => '/etc/systemd/system/logic_webapp.service',
-    source => "puppet:///modules/jobs_exporter/logic_webapp.service"
-  }
+  # file { 'logic_webapp.service':
+  #   ensure => 'present',
+  #   path => '/etc/systemd/system/logic_webapp.service',
+  #   source => "puppet:///modules/jobs_exporter/logic_webapp.service"
+  # }
 
   service { 'logic_webapp':
     ensure => 'running',
