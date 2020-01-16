@@ -1,6 +1,6 @@
 class jobs_exporter {
-
   include prometheus::pushgateway
+  
   consul::service { 'pushgateway':
     port => 9091,
     tags => ['monitor'],

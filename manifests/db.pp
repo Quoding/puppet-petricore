@@ -1,7 +1,6 @@
 class jobs_exporter::db {
   require profile::slurm::accounting
 
-
   file { '/opt/petricore_db':
     ensure => 'directory'
   }
