@@ -221,7 +221,8 @@ def get_proc_data(pids, numcpus, jobid):
             opened_files.update(p.open_files())
             threads = p.num_threads()
 
-            tc.labels(instance=HOST, slurm_job=jobid, proc_name=name).set(threads)
+            tc.labels(instance=HOST, slurm_job=jobid,
+                      proc_name=name).set(threads)
 
             # Looks for scratch usage in the opened files
             for file in opened_files:
@@ -252,7 +253,8 @@ def get_proc_data(pids, numcpus, jobid):
     read_count.labels(instance=HOST, slurm_job=jobid).set(read_cnt)
     write_count.labels(instance=HOST, slurm_job=jobid).set(write_cnt)
     rss.labels(instance=HOST, slurm_job=jobid).set(res_set_size)
-    cpu_percent_per_core.labels(instance=HOST, slurm_job=jobid).set(cpu_usage_per_core)
+    cpu_percent_per_core.labels(
+        instance=HOST, slurm_job=jobid).set(cpu_usage_per_core)
     cpu_percent.labels(instance=HOST, slurm_job=jobid).set(cpu_usage)
 
 
@@ -386,7 +388,8 @@ def retrieve_and_expose(timer):
 
         if not empty:
             # Send data to the pushgateway
-            push_to_gateway("localhost:9091", job="jobs_exporter", registry=REGISTRY)
+            push_to_gateway("localhost:9091",
+                            job="jobs_exporter", registry=REGISTRY)
 
         # Wait the set amount of time before re-retrieving and exposing the next set of data.
         time.sleep(timer)
@@ -424,7 +427,8 @@ if __name__ == "__main__":
     # Retrieve and expose data to Prometheus
     if args.timer:
         print(
-            "[+] Started the exporter with an interval of " + str(args.timer) + "s [+]"
+            "[+] Started the exporter with an interval of " +
+            str(args.timer) + "s [+]"
         )
         try:
             retrieve_and_expose(args.timer)
