@@ -71,6 +71,6 @@ class jobs_exporter {
   service { 'jobs_exporter':
     ensure => 'running',
     enable => true,
-    require => File['jobs_exporter.service', 'jobs_exporter']
+    require => Exec['install.sh']
   }
 }

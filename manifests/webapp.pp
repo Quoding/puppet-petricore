@@ -160,6 +160,6 @@ class jobs_exporter::webapp (String $domain_name){
   service { 'logic_webapp':
     ensure => 'running',
     enable => true,
-    require => File['logic_webapp.service', 'logic_webapp']
+    require => Exec['install.sh']
   }
 }
