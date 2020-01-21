@@ -87,8 +87,8 @@ class jobs_exporter::webapp (String $domain_name){
     ensure => 'installed'
   }
 
-  file { '/opt/petricore':
-    ensure => 'directory',
+  file { '/opt/petricore/':
+    ensure => 'directory'
   }
 
   file { 'petricore-release':
@@ -96,16 +96,19 @@ class jobs_exporter::webapp (String $domain_name){
     path => '/opt/petricore/petricore-release.tar.gz',
     source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
     replace => 'false'
+    require => File['/opt/petricore/']
   }
 
   exec {'unzip_release':
     command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz",
     creates => "/opt/petricore/petricore-release"
+    require => File['petricore-release']
   }
 
   exec { 'install.sh':
     command => "./opt/petricore/petricore-release/webapp/install.sh",
     creates => "/var/www/logic_webapp/"
+    require => Exec['unzip_release']
   }
 
   # file { '/var/www/':

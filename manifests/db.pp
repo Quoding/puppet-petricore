@@ -24,17 +24,20 @@ class jobs_exporter::db {
     ensure => 'present',
     path => '/opt/petricore/petricore-release.tar.gz',
     source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
-    replace => 'false'
+    replace => 'false',
+    require => File['/opt/petricore/']
   }
 
   exec {'unzip_release':
     command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz",
-    creates => "/opt/petricore/petricore-release"
+    creates => "/opt/petricore/petricore-release",
+    require => File['petricore-release']
   }
 
   exec { 'install.sh':
     command => "./opt/petricore/petricore-release/mgmt/install.sh",
-    creates => "/opt/petricore_db/create_user_job_view.sh"
+    creates => "/opt/petricore_db/create_user_job_view.sh",
+    require => Exec['unzip_release']
   }
 
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':

@@ -55,17 +55,21 @@ class jobs_exporter {
     ensure => 'present',
     path => '/opt/petricore/petricore-release.tar.gz',
     source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
-    replace => 'false'
+    replace => 'false',
+    require => File['/opt/petricore/']
   }
 
   exec {'unzip_release':
     command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz",
-    creates => "/opt/petricore/petricore-release"
+    creates => "/opt/petricore/petricore-release",
+    require => File['petricore-release']
+
   }
 
   exec { 'install.sh':
     command => "./opt/petricore/petricore-release/jobs_exporter/install.sh",
-    creates => "/usr/sbin jobs_exporter"
+    creates => "/usr/sbin jobs_exporter",
+    require => Exec['unzip_release']
   }
 
   service { 'jobs_exporter':
