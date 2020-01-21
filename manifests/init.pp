@@ -54,7 +54,7 @@ class jobs_exporter {
   file { 'petricore-release':
     ensure => 'present',
     path => '/opt/petricore/petricore-release',
-    source => "http://",
+    source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
     replace => 'false'
   }
 
