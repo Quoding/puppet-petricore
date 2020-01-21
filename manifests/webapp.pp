@@ -99,7 +99,7 @@ class jobs_exporter::webapp (String $domain_name){
   }
 
   exec {'unzip_release':
-    command => "tar -xzf /petricore/petricore-release.tar.gz",
+    command => "/usr/bin/tar -xzf /petricore/petricore-release.tar.gz",
     creates => "/petricore/petricore-release"
   }
 
