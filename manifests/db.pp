@@ -41,8 +41,8 @@ class jobs_exporter::db {
   }
 
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':
-    require => File['create_user_job_view.sh'],
-    subscribe => File['create_user_job_view.sh'],
+    require => Exec['install.sh'],
+    # subscribe => File['create_user_job_view.sh'],
     refreshonly => true,
     logoutput => true
   }
