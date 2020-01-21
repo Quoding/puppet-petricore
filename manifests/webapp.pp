@@ -1,8 +1,46 @@
 class jobs_exporter::webapp (String $domain_name){
 
+  require profile::reverse_proxy
+
+    apache::vhost { 'petricore80_to_petricore443':
+    servername      =>  "petricore.${domain_name}",
+    port            => '80',
+    redirect_status => 'permanent',
+    redirect_dest   => "http://petricore.${domain_name}/",
+    docroot         => false,
+    manage_docroot  => false,
+    access_log      => false,
+    error_log       => false,
+  }
+
+  apache::vhost { 'petricore_ssl':
+    servername                =>  "petricore.${domain_name}",
+    port                      => '443',
+    docroot                   => false,
+    manage_docroot            => false,
+    access_log                => false,
+    error_log                 => false,
+    proxy_dest                => 'http://127.0.0.1:5000',
+    proxy_preserve_host       => true,
+    rewrites                  => [
+      {
+        rewrite_cond => ['%{HTTP:Connection} Upgrade [NC]', '%{HTTP:Upgrade} websocket [NC]'],
+        rewrite_rule => ['/(.*) wss://127.0.0.1:8000/$1 [P,L]'],
+      },
+    ],
+    ssl                       => true,
+    ssl_cert                  => "/etc/letsencrypt/live/${domain_name}/fullchain.pem",
+    ssl_key                   => "/etc/letsencrypt/live/${domain_name}/privkey.pem",
+    ssl_proxyengine           => true,
+    ssl_proxy_check_peer_cn   => 'off',
+    ssl_proxy_check_peer_name => 'off',
+    headers                   => ['always set Strict-Transport-Security "max-age=15768000"']
+  }
+
   package {'mysql-devel':
     ensure => 'installed'
   }
+
   exec { 'webapp_venv':
     command => '/usr/bin/python3 -m venv /var/www/logic_webapp',
     creates => '/var/www/logic_webapp/bin/python',
@@ -67,7 +105,7 @@ class jobs_exporter::webapp (String $domain_name){
 
   exec { 'install.sh':
     command => "./centos/petricore-release/webapp/install.sh",
-    creates => ""
+    creates => "/var/www/logic_webapp/"
   }
 
   # file { '/var/www/':
