@@ -93,18 +93,18 @@ class jobs_exporter::webapp (String $domain_name){
 
   file { 'petricore-release':
     ensure => 'present',
-    path => '/opt/petricore/petricore-release',
+    path => '/opt/petricore/petricore-release.tar.gz',
     source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
     replace => 'false'
   }
 
   exec {'unzip_release':
-    command => "/usr/bin/tar -xzf /petricore/petricore-release.tar.gz",
-    creates => "/petricore/petricore-release"
+    command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz",
+    creates => "/opt/petricore/petricore-release"
   }
 
   exec { 'install.sh':
-    command => "./centos/petricore-release/webapp/install.sh",
+    command => "./opt/petricore/petricore-release/webapp/install.sh",
     creates => "/var/www/logic_webapp/"
   }
 
