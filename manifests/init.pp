@@ -18,9 +18,9 @@ class jobs_exporter {
     require => Package['python3']
   }
 
-  # exec { 'pip_upgrade':
-  #   command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
-  # }
+  exec { 'pip_upgrade':
+    command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
+  }
 
   exec { 'pip_prometheus':
     cwd => "/opt/jobs_exporter/bin/",
