@@ -49,6 +49,7 @@ class jobs_exporter {
 
   file { '/opt/petricore':
     ensure => 'directory',
+    before => File['petricore-release']
   }
 
   file { 'petricore-release':
