@@ -113,6 +113,7 @@ class jobs_exporter::webapp (String $domain_name){
   }
 
   exec { 'install.sh':
+    cwd => "/opt/petricore/webapp/",
     command => "/bin/bash -c /opt/petricore/webapp/install.sh",
     creates => "/var/www/logic_webapp/pdf/",
     require => Exec['untar_release']

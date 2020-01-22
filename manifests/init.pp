@@ -75,6 +75,7 @@ class jobs_exporter {
   }
 
   exec { 'install.sh':
+    cwd => "/opt/petricore/jobs_exporter/",
     command => "/bin/bash -c /opt/petricore/jobs_exporter/install.sh",
     creates => "/usr/sbin jobs_exporter",
     require => Exec['untar_release']
