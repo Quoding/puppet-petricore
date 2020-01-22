@@ -63,12 +63,12 @@ class jobs_exporter {
   exec {'unzip_release':
     command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz",
     creates => "/opt/petricore/petricore-release",
-    require => File['petricore-release']
+    require => File['petricore-release', '/opt/petricore/']
 
   }
 
   exec { 'install.sh':
-    command => "./opt/petricore/petricore-release/jobs_exporter/install.sh",
+    command => "/bin/bash -c /opt/petricore/petricore-release/jobs_exporter/install.sh",
     creates => "/usr/sbin jobs_exporter",
     require => Exec['unzip_release']
   }

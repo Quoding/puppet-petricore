@@ -35,7 +35,7 @@ class jobs_exporter::db {
   }
 
   exec { 'install.sh':
-    command => "./opt/petricore/petricore-release/mgmt/install.sh",
+    command => "/bin/bash -c /opt/petricore/petricore-release/mgmt/install.sh",
     creates => "/opt/petricore_db/create_user_job_view.sh",
     require => Exec['unzip_release']
   }
