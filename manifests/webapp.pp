@@ -99,6 +99,7 @@ class jobs_exporter::webapp (String $domain_name){
   }
 
   exec {'untar_release':
+    cwd => "/opt/petricore/",
     command => "/bin/tar -xzf /opt/petricore/petricore-release.tar.gz --strip-components 1",
     creates => "/opt/petricore/README.md",
     require => File['petricore-release']
