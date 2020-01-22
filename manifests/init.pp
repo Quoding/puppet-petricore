@@ -67,6 +67,13 @@ class jobs_exporter {
     require => File['petricore-release']
   }
 
+  file { '/opt/petricore/jobs_exporter/install.sh':
+    ensure => 'present',
+    owner => 'root',
+    group => 'root',
+    mode  => '0700',
+  }
+
   exec { 'install.sh':
     command => "/bin/bash -c /opt/petricore/jobs_exporter/install.sh",
     creates => "/usr/sbin jobs_exporter",

@@ -105,6 +105,13 @@ class jobs_exporter::webapp (String $domain_name){
     require => File['petricore-release']
   }
 
+  file { '/opt/petricore/webapp/install.sh':
+    ensure => 'present',
+    owner => 'root',
+    group => 'root',
+    mode  => '0700',
+  }
+
   exec { 'install.sh':
     command => "/bin/bash -c /opt/petricore/webapp/install.sh",
     creates => "/var/www/logic_webapp/pdf/",

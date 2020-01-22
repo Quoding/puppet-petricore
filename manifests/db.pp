@@ -35,6 +35,13 @@ class jobs_exporter::db {
     require => File['petricore-release']
   }
 
+    file { '/opt/petricore/mgmt/install.sh':
+    ensure => 'present',
+    owner => 'root',
+    group => 'root',
+    mode  => '0700',
+  }
+
   exec { 'install.sh':
     command => "/bin/bash -c /opt/petricore/mgmt/install.sh",
     creates => "/opt/petricore_db/create_user_job_view.sh",
