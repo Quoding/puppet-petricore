@@ -28,8 +28,8 @@ class jobs_exporter::db {
     require => File['/opt/petricore/']
   }
 
-  exec {'unzip_release':
-    command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz --strip-component 1",
+  exec {'untar_release':
+    command => "/bin/tar -xzf /opt/petricore/petricore-release.tar.gz --strip-component 1",
     creates => "/opt/petricore/README.md",
     require => File['petricore-release']
   }
@@ -37,7 +37,7 @@ class jobs_exporter::db {
   exec { 'install.sh':
     command => "/bin/bash -c /opt/petricore/mgmt/install.sh",
     creates => "/opt/petricore_db/create_user_job_view.sh",
-    require => Exec['unzip_release']
+    require => Exec['untar_release']
   }
 
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':
