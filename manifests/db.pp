@@ -29,13 +29,13 @@ class jobs_exporter::db {
   }
 
   exec {'unzip_release':
-    command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz",
-    creates => "/opt/petricore/petricore-release",
+    command => "/usr/bin/tar -xzf /opt/petricore/petricore-release.tar.gz --strip-component 1",
+    creates => "/opt/petricore/README.md",
     require => File['petricore-release']
   }
 
   exec { 'install.sh':
-    command => "/bin/bash -c /opt/petricore/petricore-release/mgmt/install.sh",
+    command => "/bin/bash -c /opt/petricore/mgmt/install.sh",
     creates => "/opt/petricore_db/create_user_job_view.sh",
     require => Exec['unzip_release']
   }
