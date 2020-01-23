@@ -6,7 +6,7 @@ class jobs_exporter::webapp (String $domain_name){
     servername      =>  "petricore.${domain_name}",
     port            => '80',
     redirect_status => 'permanent',
-    redirect_dest   => "http://petricore.${domain_name}/",
+    redirect_dest   => "https://petricore.${domain_name}/",
     docroot         => false,
     manage_docroot  => false,
     access_log      => false,
