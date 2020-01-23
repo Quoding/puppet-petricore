@@ -37,21 +37,21 @@ class jobs_exporter::db {
     cwd => "/opt/petricore/mgmt/",
     command => "/bin/bash -c /opt/petricore/mgmt/install.sh",
     creates => "/opt/petricore_db/create_user_job_view.sh",
-    require => Exec['untar_release']
-  }
-
-  file { "/opt/petricore_db/create_user_job_view.sh":
-    ensure => 'present',
-    owner => 'root',
-    group => 'root',
-    mode  => '0700',
-    require => Exec['install.sh'],
+    require => Exec['untar_release'],
     notify => Exec['/bin/bash -c /opt/petricore_db/create_user_job_view.sh'] 
   }
 
+  # file { "/opt/petricore_db/create_user_job_view.sh":
+  #   ensure => 'present',
+  #   owner => 'root',
+  #   group => 'root',
+  #   mode  => '0700',
+  #   require => Exec['install.sh'],
+  # }
+
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':
-    require => File['/opt/petricore_db/create_user_job_view.sh'],
-    subscribe => File['/opt/petricore_db/create_user_job_view.sh'],
+    require => File['install.sh'],
+    subscribe => File['install.sh'],
     refreshonly => true,
     logoutput => true
   }
