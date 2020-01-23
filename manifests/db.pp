@@ -45,12 +45,13 @@ class jobs_exporter::db {
     owner => 'root',
     group => 'root',
     mode  => '0700',
-    require => Exec['install.sh']
+    require => Exec['install.sh'],
+    notify => Exec['/bin/bash -c /opt/petricore_db/create_user_job_view.sh'] 
   }
 
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':
-    require => Exec['install.sh'],
-    # subscribe => File['create_user_job_view.sh'],
+    require => File['/opt/petricore_db/create_user_job_view.sh'],
+    subscribe => File['/opt/petricore_db/create_user_job_view.sh'],
     refreshonly => true,
     logoutput => true
   }
