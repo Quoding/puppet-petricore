@@ -1,8 +1,6 @@
 class jobs_exporter {
   include prometheus::pushgateway
 
-  require python::pyvenv
-  
   consul::service { 'pushgateway':
     port => 9091,
     tags => ['monitor'],
@@ -14,49 +12,29 @@ class jobs_exporter {
     ensure => 'installed'
   }
 
-  # exec { 'jobs_exporter_venv':
-  #   command => '/usr/bin/python3 -m venv /opt/jobs_exporter',
-  #   creates => '/opt/jobs_exporter/bin/python',
-  #   require => Package['python3']
-  # }
-
-  # exec { 'pip_upgrade':
-  #   command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
-  # }
-
-  # exec { 'pip_prometheus':
-  #   cwd => "/opt/jobs_exporter/bin/",
-  #   command => "/opt/jobs_exporter/bin/pip install prometheus_client",
-  #   creates => "/opt/jobs_exporter/lib/python3.6/site-packages/prometheus_client/",
-  #   require => Exec['jobs_exporter_venv']
-  # }
-
-  # exec { 'pip_psutil_wheel':
-  #   command => "/opt/jobs_exporter/bin/pip install psutil --find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary",
-  #   creates => "/opt/jobs_exporter/lib/python3.6/site-packages/psutil/",
-  #   require => Exec['jobs_exporter_venv']
-  # }
-
-  python::pyvenv { '/opt/jobs_exporter':
-    ensure => present,
+  exec { 'jobs_exporter_venv':
+    command => '/usr/bin/python3 -m venv /opt/jobs_exporter',
+    creates => '/opt/jobs_exporter/bin/python',
+    require => Package['python3']
   }
 
-  python::pip { 'pip':
-    ensure => latest,
-    virtualenv => '/opt/jobs_exoprter',
+  exec { 'pip_upgrade':
+    command => "/opt/jobs_exporter/bin/pip install --upgrade pip",
+    refreshonly => true,
+    subscribe => Exec['jobs_exporter_venv']
   }
 
-  python::pip { 'prometheus_client':
-    ensure => latest,
-    pip_provider => 'pip3',
-    virtualenv => '/opt/jobs_exporter',
+  exec { 'pip_prometheus':
+    cwd => "/opt/jobs_exporter/bin/",
+    command => "/opt/jobs_exporter/bin/pip install prometheus_client",
+    creates => "/opt/jobs_exporter/lib/python3.6/site-packages/prometheus_client/",
+    require => Exec['jobs_exporter_venv']
   }
 
-  python::pip { 'psutil':
-    ensure => latest,
-    pip_provider => 'pip3',
-    virtualenv => '/opt/jobs_exporter',
-    install_args => '--find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary'
+  exec { 'pip_psutil_wheel':
+    command => "/opt/jobs_exporter/bin/pip install psutil --find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary",
+    creates => "/opt/jobs_exporter/lib/python3.6/site-packages/psutil/",
+    require => Exec['jobs_exporter_venv']
   }
 
   file { '/opt/petricore':
