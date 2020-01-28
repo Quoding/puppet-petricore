@@ -1,5 +1,5 @@
-# puppet-jobs_exporter
-Puppet deployment scripts for jobs_exporter/petriCORE
+# puppet-petricore
+Puppet deployment scripts for petriCORE
 
 ## Assumptions
 The deployment script for jobs_exporter assumes that most packages used by the `jobs_exporter` are already installed on the machine (as with Magic Castle). For now 
