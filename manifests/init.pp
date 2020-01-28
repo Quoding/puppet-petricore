@@ -47,13 +47,13 @@ class jobs_exporter {
   }
 
   python::pip { 'prometheus_client':
-    ensure => present,
+    ensure => latest,
     pip_provider => 'pip3',
     virtualenv => '/opt/jobs_exporter',
   }
 
   python::pip { 'psutil':
-    ensure => present,
+    ensure => latest,
     pip_provider => 'pip3',
     virtualenv => '/opt/jobs_exporter',
     install_args => '--find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary'
