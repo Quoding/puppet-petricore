@@ -1,12 +1,6 @@
 class jobs_exporter::db {
   require profile::slurm::accounting
 
-  # file { '/opt/petricore_db':
-  #   ensure => 'directory'
-  # }
-
-
-
   file { '/opt/petricore':
     ensure => 'directory',
   }
@@ -40,14 +34,6 @@ class jobs_exporter::db {
     require => Exec['untar_release'],
     notify => Exec['/bin/bash -c /opt/petricore_db/create_user_job_view.sh'] 
   }
-
-  # file { "/opt/petricore_db/create_user_job_view.sh":
-  #   ensure => 'present',
-  #   owner => 'root',
-  #   group => 'root',
-  #   mode  => '0700',
-  #   require => Exec['install.sh'],
-  # }
 
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':
     require => Exec['install.sh'],

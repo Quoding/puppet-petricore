@@ -53,6 +53,7 @@ class jobs_exporter::webapp (String $domain_name){
     creates => "/var/www/logic_webapp/lib/python3.6/site-packages/flask/",
     require => Exec['webapp_venv']
   }
+  
   exec { 'pip_requests':
     cwd => "/var/www/logic_webapp/bin/",
     command => "/var/www/logic_webapp/bin/pip install requests",
@@ -119,54 +120,11 @@ class jobs_exporter::webapp (String $domain_name){
     require => Exec['untar_release']
   }
 
-  # file { '/var/www/':
-  #   ensure => 'directory'
-  # }
-
-  # file { 'logic_webapp':
-  #   ensure => 'present',
-  #   path => '/var/www/logic_webapp/logic_webapp.py',
-  #   source => "puppet:///modules/jobs_exporter/logic_webapp.py"
-  # }
-
-  # file { 'db_access.py':
-  #   ensure => 'present',
-  #   path => '/var/www/logic_webapp/db_access.py',
-  #   source => "puppet:///modules/jobs_exporter/db_access.py"
-  # }
-
   file { 'config':
     ensure => 'present',
     path => '/var/www/logic_webapp/webapp_config',
     content => epp('jobs_exporter/webapp_config', {'domain_name' => $domain_name}),
   }
-
-  # file { 'job.py':
-  #   ensure => 'present',
-  #   path => '/var/www/logic_webapp/job.py',
-  #   source => "puppet:///modules/jobs_exporter/job.py"
-  # }
-
-  # file { 'user.py':
-  #   ensure => 'present',
-  #   path => '/var/www/logic_webapp/user.py',
-  #   source => "puppet:///modules/jobs_exporter/user.py"
-  # }
-  # file { '/var/www/logic_webapp/pdf':
-  #   ensure => 'directory',
-  # }
-  # file { '/var/www/logic_webapp/plots':
-  #   ensure => 'directory',
-  # }
-  # file { '/var/www/logic_webapp/pies':
-  #   ensure => 'directory',
-  # }
-
-  # file { 'logic_webapp.service':
-  #   ensure => 'present',
-  #   path => '/etc/systemd/system/logic_webapp.service',
-  #   source => "puppet:///modules/jobs_exporter/logic_webapp.service"
-  # }
 
   service { 'logic_webapp':
     ensure => 'running',

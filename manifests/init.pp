@@ -1,5 +1,7 @@
 class jobs_exporter {
   include prometheus::pushgateway
+
+  require python::pyvenv
   
   consul::service { 'pushgateway':
     port => 9091,
@@ -12,40 +14,50 @@ class jobs_exporter {
     ensure => 'installed'
   }
 
-  exec { 'jobs_exporter_venv':
-    command => '/usr/bin/python3 -m venv /opt/jobs_exporter',
-    creates => '/opt/jobs_exporter/bin/python',
-    require => Package['python3']
-  }
-
-  exec { 'pip_upgrade':
-    command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
-  }
-
-  exec { 'pip_prometheus':
-    cwd => "/opt/jobs_exporter/bin/",
-    command => "/opt/jobs_exporter/bin/pip install prometheus_client",
-    creates => "/opt/jobs_exporter/lib/python3.6/site-packages/prometheus_client/",
-    require => Exec['jobs_exporter_venv']
-  }
-
-  exec { 'pip_psutil_wheel':
-    command => "/opt/jobs_exporter/bin/pip install psutil --find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary",
-    creates => "/opt/jobs_exporter/lib/python3.6/site-packages/psutil/",
-    require => Exec['jobs_exporter_venv']
-  }
-
-  # file { 'jobs_exporter.service':
-  #   ensure => 'present',
-  #   path => '/etc/systemd/system/jobs_exporter.service',
-  #   source => "puppet:///modules/jobs_exporter/jobs_exporter.service"
+  # exec { 'jobs_exporter_venv':
+  #   command => '/usr/bin/python3 -m venv /opt/jobs_exporter',
+  #   creates => '/opt/jobs_exporter/bin/python',
+  #   require => Package['python3']
   # }
 
-  # file { 'jobs_exporter':
-  #   ensure => 'present',
-  #   path => '/usr/sbin/jobs_exporter',
-  #   source => "puppet:///modules/jobs_exporter/jobs_exporter.py"
+  # exec { 'pip_upgrade':
+  #   command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
   # }
+
+  # exec { 'pip_prometheus':
+  #   cwd => "/opt/jobs_exporter/bin/",
+  #   command => "/opt/jobs_exporter/bin/pip install prometheus_client",
+  #   creates => "/opt/jobs_exporter/lib/python3.6/site-packages/prometheus_client/",
+  #   require => Exec['jobs_exporter_venv']
+  # }
+
+  # exec { 'pip_psutil_wheel':
+  #   command => "/opt/jobs_exporter/bin/pip install psutil --find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary",
+  #   creates => "/opt/jobs_exporter/lib/python3.6/site-packages/psutil/",
+  #   require => Exec['jobs_exporter_venv']
+  # }
+
+  python::pyvenv { '/opt/jobs_exporter':
+    ensure => present,
+  }
+
+  python::pip { 'pip':
+    ensure => latest,
+    virtualenv => '/opt/jobs_exoprter',
+  }
+
+  python::pip { 'prometheus_client':
+    ensure => present,
+    pip_provider => 'pip3',
+    virtualenv => '/opt/jobs_exporter',
+  }
+
+  python::pip { 'psutil':
+    ensure => present,
+    pip_provider => 'pip3',
+    virtualenv => '/opt/jobs_exporter',
+    install_args => '--find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary'
+  }
 
   file { '/opt/petricore':
     ensure => 'directory',
