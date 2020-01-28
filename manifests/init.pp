@@ -34,7 +34,7 @@ class jobs_exporter {
   exec { 'pip_psutil_wheel':
     command => "/opt/jobs_exporter/bin/pip install psutil --find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary",
     creates => "/opt/jobs_exporter/lib/python3.6/site-packages/psutil/",
-    require => Exec['jobs_exporter_venv']
+    require => Exec['jobs_exporter_venv', 'pip_upgrade']
   }
 
   file { '/opt/petricore':
@@ -67,7 +67,7 @@ class jobs_exporter {
   exec { 'install.sh':
     cwd => "/opt/petricore/jobs_exporter/",
     command => "/bin/bash -c /opt/petricore/jobs_exporter/install.sh",
-    creates => "/usr/sbin jobs_exporter",
+    creates => "/usr/sbin/jobs_exporter",
     require => Exec['untar_release']
   }
 
