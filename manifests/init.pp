@@ -1,6 +1,6 @@
 class jobs_exporter {
-
   include prometheus::pushgateway
+
   consul::service { 'pushgateway':
     port => 9091,
     tags => ['monitor'],
@@ -19,7 +19,9 @@ class jobs_exporter {
   }
 
   exec { 'pip_upgrade':
-    command => "/opt/jobs_exporter/bin/pip install --upgrade pip"
+    command => "/opt/jobs_exporter/bin/pip install --upgrade pip",
+    refreshonly => true,
+    subscribe => Exec['jobs_exporter_venv']
   }
 
   exec { 'pip_prometheus':
@@ -35,21 +37,43 @@ class jobs_exporter {
     require => Exec['jobs_exporter_venv']
   }
 
-  file { 'jobs_exporter.service':
-    ensure => 'present',
-    path => '/etc/systemd/system/jobs_exporter.service',
-    source => "puppet:///modules/jobs_exporter/jobs_exporter.service"
+  file { '/opt/petricore':
+    ensure => 'directory',
+    before => File['petricore-release']
   }
 
-  file { 'jobs_exporter':
+  file { 'petricore-release':
     ensure => 'present',
-    path => '/usr/sbin/jobs_exporter',
-    source => "puppet:///modules/jobs_exporter/jobs_exporter.py"
+    path => '/opt/petricore/petricore-release.tar.gz',
+    source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
+    replace => 'false',
+    require => File['/opt/petricore/']
+  }
+
+  exec {'untar_release':
+    cwd => "/opt/petricore/",
+    command => "/bin/tar -xzf /opt/petricore/petricore-release.tar.gz --strip-components 1",
+    creates => "/opt/petricore/README.md",
+    require => File['petricore-release']
+  }
+
+  file { '/opt/petricore/jobs_exporter/install.sh':
+    ensure => 'present',
+    owner => 'root',
+    group => 'root',
+    mode  => '0700',
+  }
+
+  exec { 'install.sh':
+    cwd => "/opt/petricore/jobs_exporter/",
+    command => "/bin/bash -c /opt/petricore/jobs_exporter/install.sh",
+    creates => "/usr/sbin jobs_exporter",
+    require => Exec['untar_release']
   }
 
   service { 'jobs_exporter':
     ensure => 'running',
     enable => true,
-    require => File['jobs_exporter.service', 'jobs_exporter']
+    require => Exec['install.sh']
   }
 }
