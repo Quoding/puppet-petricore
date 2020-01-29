@@ -126,7 +126,7 @@ class petricore::webapp (String $domain_name){
   file { 'config':
     ensure => 'present',
     path => '/var/www/logic_webapp/webapp_config',
-    content => epp('jobs_exporter/webapp_config', {'domain_name' => $domain_name}),
+    content => epp('petricore/webapp_config', {'domain_name' => $domain_name}),
   }
 
   service { 'logic_webapp':
