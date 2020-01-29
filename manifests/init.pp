@@ -34,7 +34,7 @@ class petricore  {
   exec { 'pip_psutil_wheel':
     command => "/opt/jobs_exporter/bin/pip install psutil --find-links /cvmfs/soft.computecanada.ca/custom/python/wheelhouse/generic/ --prefer-binary",
     creates => "/opt/jobs_exporter/lib/python3.6/site-packages/psutil/",
-    require => Exec['jobs_exporter_venv', 'pip_upgrade']
+    require => Exec['pip_upgrade']
   }
 
   file { '/opt/petricore':
@@ -64,13 +64,14 @@ class petricore  {
     owner => 'root',
     group => 'root',
     mode  => '0700',
+    require => Exec['untar_release']
   }
 
   exec { 'install.sh':
     cwd => "/opt/petricore/jobs_exporter/",
     command => "/bin/bash -c /opt/petricore/jobs_exporter/install.sh",
     creates => "/usr/sbin/jobs_exporter",
-    require => Exec['untar_release']
+    require => File['/opt/petricore/jobs_exporter/install.sh']
   }
 
   service { 'jobs_exporter':

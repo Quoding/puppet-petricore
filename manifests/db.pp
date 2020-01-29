@@ -27,13 +27,14 @@ class petricore::db {
     owner => 'root',
     group => 'root',
     mode  => '0700',
+    require => Exec['untar_release']
   }
 
   exec { 'install.sh':
     cwd => "/opt/petricore/mgmt/",
     command => "/bin/bash -c /opt/petricore/mgmt/install.sh",
     creates => "/opt/petricore_db/create_user_job_view.sh",
-    require => Exec['untar_release'],
+    require => File['/opt/petricore/mgmt/install.sh'],
     notify => Exec['/bin/bash -c /opt/petricore_db/create_user_job_view.sh'] 
   }
 

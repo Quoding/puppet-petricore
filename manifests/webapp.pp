@@ -114,13 +114,14 @@ class petricore::webapp (String $domain_name){
     owner => 'root',
     group => 'root',
     mode  => '0700',
+    require => Exec['untar_release']
   }
 
   exec { 'install.sh':
     cwd => "/opt/petricore/webapp/",
     command => "/bin/bash -c /opt/petricore/webapp/install.sh",
     creates => "/var/www/logic_webapp/pdf/",
-    require => Exec['untar_release']
+    require => File['/opt/petricore/webapp/install.sh']
   }
 
   file { 'config':
