@@ -1,4 +1,4 @@
-class jobs_exporter::webapp {
+class petricore::dwebapp {
   include 'docker'
   
   file { 'docker-logic_webapp':

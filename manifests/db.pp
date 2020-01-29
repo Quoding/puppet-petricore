@@ -1,14 +1,16 @@
-class jobs_exporter::db {
+class petricore::db {
   require profile::slurm::accounting
 
   file { '/opt/petricore':
     ensure => 'directory',
   }
 
+  $petricore_version = lookup('petricore::version')
+
   file { 'petricore-release':
     ensure => 'present',
     path => '/opt/petricore/petricore-release.tar.gz',
-    source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
+    source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
     replace => 'false',
     require => File['/opt/petricore/']
   }

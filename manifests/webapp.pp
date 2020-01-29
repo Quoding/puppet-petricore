@@ -1,4 +1,4 @@
-class jobs_exporter::webapp (String $domain_name){
+class petricore::webapp (String $domain_name){
 
   require profile::reverse_proxy
 
@@ -91,10 +91,13 @@ class jobs_exporter::webapp (String $domain_name){
   file { '/opt/petricore/':
     ensure => 'directory'
   }
+
+  $petricore_version = lookup('petricore::version')
+
   file { 'petricore-release':
     ensure => 'present',
     path => '/opt/petricore/petricore-release.tar.gz',
-    source => "http://github.com/Quoding/petricore/archive/v0.01.tar.gz",
+    source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
     replace => 'false',
     require => File['/opt/petricore/']
   }

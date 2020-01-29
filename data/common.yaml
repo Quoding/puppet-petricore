@@ -1,0 +1,5 @@
+# petricore/data/common.yaml
+---
+petricore::version: 0.01
+petricore::webapp::version: 0.01
+petricore::db::version: 0.01
