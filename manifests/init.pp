@@ -39,7 +39,6 @@ class petricore  {
 
   file { '/opt/petricore':
     ensure => 'directory',
-    before => File['petricore-release']
   }
 
   $petricore_version = lookup('petricore::version')
@@ -77,6 +76,6 @@ class petricore  {
   service { 'jobs_exporter':
     ensure => 'running',
     enable => true,
-    require => Exec['install.sh']
+    require => Exec['install.sh', "pip_psutil_wheel"]
   }
 }
