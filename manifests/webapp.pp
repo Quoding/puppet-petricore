@@ -80,6 +80,13 @@ class petricore::webapp (String $domain_name){
     require => Exec['webapp_venv']
   }
 
+  exec { 'pip_ldap':
+    cwd => "/var/www/logic_webapp/bin/",
+    command => "/var/www/logic_webapp/bin/pip install python-ldap",
+    creates => "/var/www/logic_webapp/lib/python3.6/site-packages/ldap/",
+    require => Exec['webapp_venv']
+  }
+
   package { 'texlive':
     ensure => 'installed'
   }
