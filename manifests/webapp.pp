@@ -1,4 +1,4 @@
-class petricore::webapp (String $domain_name){
+class petricore::webapp (String $domain_name, String $petricore_pass){
 
   require profile::reverse_proxy
 
@@ -134,7 +134,7 @@ class petricore::webapp (String $domain_name){
   file { 'config':
     ensure => 'present',
     path => '/var/www/logic_webapp/webapp_config',
-    content => epp('petricore/webapp_config', {'domain_name' => $domain_name}),
+    content => epp('petricore/webapp_config', {'domain_name' => $domain_name, 'password' => $petricore_pass}),
   }
 
   service { 'logic_webapp':

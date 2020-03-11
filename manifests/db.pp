@@ -1,4 +1,4 @@
-class petricore::db {
+class petricore::db(String $petricore_pass) {
   require profile::slurm::accounting
 
   file { '/opt/petricore':
@@ -38,9 +38,16 @@ class petricore::db {
     notify => Exec['/bin/bash -c /opt/petricore_db/create_user_job_view.sh'] 
   }
 
+  file { 'config':
+    ensure => 'present',
+    path => '/opt/petricore_db/db_config',
+    content => epp('petricore/db_config', {'password' => $petricore_pass}),
+  }
+
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':
     require => Exec['install.sh'],
     subscribe => Exec['install.sh'],
+    require => File['config'],
     refreshonly => true,
     logoutput => true
   }
