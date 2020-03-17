@@ -114,11 +114,11 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
 
   archive { '/opt/petricore.tar.gz':
     extract => true,
-    cleanup => true,
+    extract_path => '/opt/petricore/',
     extract_flags => '--strip-component 1',
-    extract_path => '/opt/petricore',
-    creates => '/opt/petricore',
+    creates => '/opt/petricore/README.md',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
+    cleanup => true,
   }
 
   file { '/opt/petricore/webapp/install.sh':

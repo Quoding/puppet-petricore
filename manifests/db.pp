@@ -10,9 +10,9 @@ class petricore::db(String $petricore_pass) {
 
   archive { '/opt/petricore.tar.gz':
     extract => true,
-    extract_path => '/opt/petricore',
+    extract_path => '/opt/petricore/',
     extract_flags => '--strip-component 1',
-    creates => '/opt/petricore',
+    creates => '/opt/petricore/README.md',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
     cleanup => true,
   }
