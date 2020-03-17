@@ -37,19 +37,13 @@ class petricore  {
     require => Exec['pip_upgrade']
   }
 
-  file { '/opt/petricore':
-    ensure => 'directory',
-  }
-
   $petricore_version = lookup('petricore::version')
 
-  archive { '/opt/petricore/petricore-release.tar.gz':
+  archive { '/opt/petricore.tar.gz':
     ensure => 'present',
     extract => true,
-    creates => '/opt/petricore/petricore-release',
+    creates => '/opt/petricore',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
-    extract_flags => '--strip-components 1',
-    require => File['/opt/petricore/'],
   }
 
   file { '/opt/petricore/jobs_exporter/install.sh':
