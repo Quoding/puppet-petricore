@@ -5,6 +5,7 @@ class petricore::db(String $petricore_pass) {
 
   archive { '/opt/petricore.tar.gz':
     extract => true,
+    cleanup => true,
     creates => '/opt/petricore',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
   }

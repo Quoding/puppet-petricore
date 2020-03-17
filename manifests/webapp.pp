@@ -48,7 +48,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
   exec { 'webapp_venv':
     command => '/usr/bin/python3 -m venv /var/www/logic_webapp',
     creates => '/var/www/logic_webapp/bin/python',
-    require => Package['python3']
+    require => Package['python3', 'gcc']
   }
   
   exec { 'pip_flask':
@@ -105,6 +105,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
     extract => true,
     creates => '/opt/petricore',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
+    cleanup => true,
   }
 
   file { '/opt/petricore/webapp/install.sh':
