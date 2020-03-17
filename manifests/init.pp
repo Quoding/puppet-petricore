@@ -46,7 +46,7 @@ class petricore  {
 
   archive { '/opt/petricore.tar.gz':
     extract => true,
-    extract_command => 'tar -xzf --strip-component 1 /opt/petricore.tar.gz',
+    extract_command => 'tar -xzf /opt/petricore.tar.gz --strip-component 1',
     extract_path => '/opt/petricore/',
     creates => '/opt/petricore/README.md',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
