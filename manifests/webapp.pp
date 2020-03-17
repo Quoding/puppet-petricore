@@ -48,6 +48,9 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
   package {'python3-devel':
     ensure => 'installed'
   }
+  package {'openldap-devel':
+    ensure => 'installed'
+  }
 
   exec { 'webapp_venv':
     command => '/usr/bin/python3 -m venv /var/www/logic_webapp',
