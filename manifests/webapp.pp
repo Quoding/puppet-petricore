@@ -45,6 +45,10 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
     ensure => 'installed',
   }
 
+  package {'python-devel':
+    ensure => 'installed'
+  }
+
   exec { 'webapp_venv':
     command => '/usr/bin/python3 -m venv /var/www/logic_webapp',
     creates => '/var/www/logic_webapp/bin/python',
