@@ -103,7 +103,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
     ensure => 'directory'
   }
 
-  $petricore_version = lookup('petricore::version')
+  $petricore_version = lookup('pe5tricore::version')
 
   archive { '/opt/petricore/petricore-release.tar.gz':
     ensure => 'present',
@@ -119,7 +119,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
     owner => 'root',
     group => 'root',
     mode  => '0700',
-    require => Exec['untar_release']
+    require => Archive['/opt/petricore/petricore-release.tar.gz']
   }
 
   exec { 'install.sh':

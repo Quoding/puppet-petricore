@@ -21,7 +21,7 @@ class petricore::db(String $petricore_pass) {
     owner => 'root',
     group => 'root',
     mode  => '0700',
-    require => Exec['untar_release']
+    require => Archive['/opt/petricore/petricore-release.tar.gz']
   }
 
   exec { 'install.sh':
