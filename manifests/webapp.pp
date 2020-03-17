@@ -103,7 +103,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
     ensure => 'directory'
   }
 
-  $petricore_version = lookup('pe5tricore::version')
+  $petricore_version = lookup('petricore::version')
 
   archive { '/opt/petricore/petricore-release.tar.gz':
     ensure => 'present',
