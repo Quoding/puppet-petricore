@@ -113,6 +113,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
   $petricore_version = lookup('petricore::version')
 
   archive { '/opt/petricore.tar.gz':
+    extract => true,
     extract_command => 'tar -xzvf %s --strip-component 1',
     extract_path => '/opt/petricore/',
     creates => '/opt/petricore/README.md',
