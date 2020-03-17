@@ -40,7 +40,6 @@ class petricore  {
   $petricore_version = lookup('petricore::version')
 
   archive { '/opt/petricore.tar.gz':
-    ensure => 'present',
     extract => true,
     creates => '/opt/petricore',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
