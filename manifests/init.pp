@@ -43,19 +43,13 @@ class petricore  {
 
   $petricore_version = lookup('petricore::version')
 
-  file { 'petricore-release':
+  archive { '/opt/petricore/petricore-release.tar.gz':
     ensure => 'present',
-    path => '/opt/petricore/petricore-release.tar.gz',
+    extract => true,
+    creates => '/opt/petricore/petricore-release',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
-    replace => 'false',
-    require => File['/opt/petricore/']
-  }
-
-  exec {'untar_release':
-    cwd => "/opt/petricore/",
-    command => "/bin/tar -xzf /opt/petricore/petricore-release.tar.gz --strip-components 1",
-    creates => "/opt/petricore/README.md",
-    require => File['petricore-release']
+    extract_flags => '--strip-components 1',
+    require => File['/opt/petricore/'],
   }
 
   file { '/opt/petricore/jobs_exporter/install.sh':
