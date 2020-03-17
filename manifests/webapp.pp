@@ -45,7 +45,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
     ensure => 'installed',
   }
 
-  package {'python-devel':
+  package {'python3-devel':
     ensure => 'installed'
   }
 
