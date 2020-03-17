@@ -51,7 +51,7 @@ class petricore  {
     owner => 'root',
     group => 'root',
     mode  => '0700',
-    require => Archive['/opt/petricore/petricore-release.tar.gz']
+    require => Archive['/opt/petricore.tar.gz']
   }
 
   exec { 'install.sh':
