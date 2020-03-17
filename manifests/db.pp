@@ -10,7 +10,7 @@ class petricore::db(String $petricore_pass) {
 
   archive { '/opt/petricore.tar.gz':
     extract => true,
-    extract_command => 'tar -xzf --strip-component 1 petricore.tar.gz'
+    extract_command => 'tar -xzf --strip-component 1 petricore.tar.gz',
     extract_path => '/opt/petricore/',
     creates => '/opt/petricore/README.md',
     source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
