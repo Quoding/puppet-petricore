@@ -32,7 +32,7 @@ class petricore::db(String $petricore_pass) {
     require => File['/opt/petricore/mgmt/install.sh'],
   }
 
-  file { '/opt/petricore_db/db_config':
+  file { 'config':
     ensure => 'present',
     owner => 'root',
     group => 'root',
@@ -43,7 +43,7 @@ class petricore::db(String $petricore_pass) {
   }
 
   exec { '/bin/bash -c /opt/petricore_db/create_user_job_view.sh':
-    require => File['/opt/petricore_db/db_config'],
+    require => File['config'],
     logoutput => true
   }
 
