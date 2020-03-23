@@ -141,7 +141,7 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
     path => '/var/www/logic_webapp/webapp_config',
     owner => 'root',
     group => 'root',
-    mode  => '0700',
+    mode  => '0600',
     content => epp('petricore/webapp_config', {'domain_name' => $domain_name, 'password' => $petricore_pass}),
     require => Exec['install.sh']
   }

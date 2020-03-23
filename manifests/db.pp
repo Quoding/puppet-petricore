@@ -32,11 +32,11 @@ class petricore::db(String $petricore_pass) {
     require => File['/opt/petricore/mgmt/install.sh'],
   }
 
-  file { 'config':
+  file { '/opt/petricore_db/db_config':
     ensure => 'present',
     owner => 'root',
     group => 'root',
-    mode  => '0700',
+    mode  => '0600',
     path => '/opt/petricore_db/db_config',
     content => epp('petricore/db_config', {'password' => $petricore_pass}),
     require => Exec['install.sh'],
