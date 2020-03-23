@@ -139,12 +139,16 @@ class petricore::webapp (String $domain_name, String $petricore_pass){
   file { 'config':
     ensure => 'present',
     path => '/var/www/logic_webapp/webapp_config',
+    owner => 'root',
+    group => 'root',
+    mode  => '0700',
     content => epp('petricore/webapp_config', {'domain_name' => $domain_name, 'password' => $petricore_pass}),
+    require => Exec['install.sh']
   }
 
   service { 'logic_webapp':
     ensure => 'running',
     enable => true,
-    require => Exec['install.sh']
+    require => File['config']
   }
 }
