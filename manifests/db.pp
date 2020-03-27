@@ -13,7 +13,7 @@ class petricore::db(String $petricore_pass) {
     extract_command => 'tar -xzf %s --strip-component 1',
     extract_path => '/opt/petricore/',
     creates => '/opt/petricore/README.md',
-    source => "http://github.com/calculquebec/petricore/archive/v${petricore_version}.tar.gz",
+    source => "https://github.com/calculquebec/petricore/archive/v${petricore_version}.tar.gz",
     cleanup => true,
   }
 
