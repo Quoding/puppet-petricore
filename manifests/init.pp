@@ -49,7 +49,7 @@ class petricore  {
     extract_command => 'tar -xzf %s --strip-component 1',
     extract_path => '/opt/petricore/',
     creates => '/opt/petricore/README.md',
-    source => "http://github.com/Quoding/petricore/archive/v${petricore_version}.tar.gz",
+    source => "http://github.com/calculquebec/petricore/archive/v${petricore_version}.tar.gz",
     cleanup => true,
   }
 
