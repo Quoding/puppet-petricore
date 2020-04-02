@@ -12,3 +12,8 @@ puppetenv_git = "https://github.com/calculquebec/puppet-magic_castle.git"
 puppetenv_rev = "testing"
 ```
 
+Note that the magic_castle repo makes 2 new virtual hosts which redirect to Prometheus and PetriCORE. 
+
+- petricore.yourhostname
+- prometheus.yourhostname
+
