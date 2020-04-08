@@ -12,6 +12,10 @@ class petricore  {
     ensure => 'installed'
   }
 
+  package { 'python3-devel':
+    ensure => 'installed'
+  }
+
   exec { 'jobs_exporter_venv':
     command => '/usr/bin/python3 -m venv /opt/jobs_exporter',
     creates => '/opt/jobs_exporter/bin/python',
