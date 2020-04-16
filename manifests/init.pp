@@ -15,7 +15,7 @@ class petricore  {
   }
   exec { 'go get github.com/zhebrak/nvidia_smi_exporter':
     cwd => '/opt/nvidia_smi_exporter',
-    creates => '/opt/nvidia_smi_exporter/bin'
+    creates => '/opt/nvidia_smi_exporter/bin',
     require => Package['go']
   }
 
