@@ -7,6 +7,24 @@ class petricore  {
     token => lookup('profile::consul::acl_api_token')
   }
 
+  package { 'go':
+    ensure => 'installed'
+  }
+  file { '/opt/nvidia_smi_exporter': 
+    ensure => 'directory'
+  }
+  exec { 'go get github.com/zhebrak/nvidia_smi_exporter':
+    cwd => '/opt/nvidia_smi_exporter',
+    creates => '/opt/nvidia_smi_exporter/bin'
+    require => Package['go']
+  }
+
+  consul::service { 'nvidia_smi_exporter':
+    port => 9101,
+    tags => ['monitor'],
+    token => lookup('profile::consul::acl_api_token')
+  }
+
   #For cgdelete inside the Slurm epilog
   package { 'libcgroup-tools':
     ensure => 'installed'
