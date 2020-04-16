@@ -19,7 +19,7 @@ class petricore  {
   }
 
   file { '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
-    source => "https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter",
+    source => "http://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter",
   }
 
   consul::service { 'nvidia_smi_exporter':
