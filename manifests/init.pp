@@ -17,10 +17,10 @@ class petricore  {
   file { '/opt/nvidia_smi_exporter': 
     ensure => 'directory'
   }
-  exec { 'go get github.com/zhebrak/nvidia_smi_exporter':
-    cwd => '/opt/nvidia_smi_exporter',
-    creates => '/opt/nvidia_smi_exporter/bin',
-    require => Package['go']
+
+  file { '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
+    source => "https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter",
+    creates => '/opt/nvidia_smi_exporter/nvidia_smi_exporter'
   }
 
   consul::service { 'nvidia_smi_exporter':
@@ -78,6 +78,7 @@ class petricore  {
     source => "https://github.com/calculquebec/petricore/archive/v${petricore_version}.tar.gz",
     cleanup => true,
   }
+  
 
   file { '/opt/petricore/jobs_exporter/install.sh':
     ensure => 'present',
@@ -99,7 +100,7 @@ class petricore  {
     enable => true,
     require => Exec['install.sh', "pip_psutil_wheel"]
   }
-  
+
   service { 'nvidia_smi_exporter':
     ensure => 'running',
     enable => true,
