@@ -95,8 +95,8 @@ class petricore  {
     enable => true,
     require => Exec['install.sh', "pip_psutil_wheel"]
   }
-  
-    service { 'nvidia_smi_exporter':
+
+  service { 'nvidia_smi_exporter':
     ensure => 'running',
     enable => true,
     require => Exec['install.sh']
