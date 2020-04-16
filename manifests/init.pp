@@ -6,10 +6,14 @@ class petricore  {
     tags => ['monitor'],
     token => lookup('profile::consul::acl_api_token')
   }
-
-  package { 'go':
+  package { 'epel-release':
     ensure => 'installed'
   }
+
+  package { 'golang':
+    ensure => 'installed'
+  }
+
   file { '/opt/nvidia_smi_exporter': 
     ensure => 'directory'
   }
@@ -95,7 +99,7 @@ class petricore  {
     enable => true,
     require => Exec['install.sh', "pip_psutil_wheel"]
   }
-
+  
   service { 'nvidia_smi_exporter':
     ensure => 'running',
     enable => true,
