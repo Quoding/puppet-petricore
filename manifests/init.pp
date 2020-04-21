@@ -6,28 +6,33 @@ class petricore  {
     tags => ['monitor'],
     token => lookup('profile::consul::acl_api_token')
   }
-  package { 'epel-release':
-    ensure => 'installed'
-  }
+#  package { 'epel-release':
+#    ensure => 'installed'
+#  }
 
-  package { 'golang':
-    ensure => 'installed'
-  }
+#  package { 'golang':
+#    ensure => 'installed'
+#  }
 
   file { '/opt/nvidia_smi_exporter': 
     ensure => 'directory'
   }
 
-  file { '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
-    ensure => 'present',
-    source => "http://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter",
-  }
+  # file { '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
+  #   ensure => 'present',
+  #   source => "https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter",
+  #   replace => 'false'
+  # }
 
-  consul::service { 'nvidia_smi_exporter':
-    port => 9101,
-    tags => ['monitor'],
-    token => lookup('profile::consul::acl_api_token')
-  }
+  githubreleases_download {
+  '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
+    author            => 'calculquebec',
+    repository        => 'nvidia_smi_exporter',
+    release           => 'v1.0',
+    asset             => true,
+    asset_contenttype => 'application\/octet-stream'
+}
+
 
   #For cgdelete inside the Slurm epilog
   package { 'libcgroup-tools':
@@ -105,5 +110,11 @@ class petricore  {
     ensure => 'running',
     enable => true,
     require => Exec['install.sh']
+  }
+  
+  consul::service { 'nvidia_smi_exporter':
+    port => 9101,
+    tags => ['monitor'],
+    token => lookup('profile::consul::acl_api_token')
   }
 }
