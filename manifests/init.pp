@@ -25,7 +25,7 @@ class petricore  {
   # }
 
   package {'wget':
-    ensure => 'present',
+    ensure => 'installed',
   }
 
 
