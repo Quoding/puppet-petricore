@@ -6,34 +6,33 @@ class petricore  {
     tags => ['monitor'],
     token => lookup('profile::consul::acl_api_token')
   }
-#  package { 'epel-release':
-#    ensure => 'installed'
-#  }
-
-#  package { 'golang':
-#    ensure => 'installed'
-#  }
 
   file { '/opt/nvidia_smi_exporter': 
     ensure => 'directory'
   }
 
+  # Commented out -> could work but it seems the github redirection to aws is buggy for now.
   # file { '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
   #   ensure => 'present',
   #   source => "https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter",
   #   replace => 'false'
   # }
 
-  package {'wget':
+  package { 'wget':
     ensure => 'installed',
   }
 
 
-  exec {'wget https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter':
+  exec {'/bin/wget https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter':
     creates => '/opt/nvidia_smi_exporter/nvidia_smi_exporter',
-    cwd => '/opt/nvidia_smi_exporter/'
+    cwd => '/opt/nvidia_smi_exporter/',
+    require => Package['wget']
   }
 
+  file { '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
+    mode => '0700',
+    owner => 'root'
+  }
 
   #For cgdelete inside the Slurm epilog
   package { 'libcgroup-tools':
@@ -110,7 +109,7 @@ class petricore  {
   service { 'nvidia_smi_exporter':
     ensure => 'running',
     enable => true,
-    require => Exec['install.sh']
+    require => Exec['/bin/wget https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter', 'install.sh']
   }
   
   consul::service { 'nvidia_smi_exporter':
