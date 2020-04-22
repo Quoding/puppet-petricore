@@ -24,14 +24,15 @@ class petricore  {
   #   replace => 'false'
   # }
 
-  githubreleases_download {
-  '/opt/nvidia_smi_exporter/nvidia_smi_exporter':
-    author            => 'calculquebec',
-    repository        => 'nvidia_smi_exporter',
-    release           => 'v1.0',
-    asset             => true,
-    asset_contenttype => 'application\/octet-stream'
-}
+  package {'wget':
+    ensure => 'present',
+  }
+
+
+  exec {'wget https://github.com/calculquebec/nvidia_smi_exporter/releases/download/v1.0/nvidia_smi_exporter':
+    creates => '/opt/nvidia_smi_exporter/nvidia_smi_exporter',
+    cwd => '/opt/nvidia_smi_exporter/'
+  }
 
 
   #For cgdelete inside the Slurm epilog
